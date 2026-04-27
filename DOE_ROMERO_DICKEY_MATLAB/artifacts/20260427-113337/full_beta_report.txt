@@ -1,0 +1,22 @@
+Romero-Dickey beta report
+==========================
+
+lambda = 5.32e-07 m
+f = 0.429 m
+input 1/e^2 intensity diameter = 0.005 m
+input 1/e^2 intensity radius w = 0.0025 m
+paper ri = input_1e2_radius_m / sqrt(2) = 0.00176776695 m
+target size x = 0.00033 m, y = 0.00012 m
+Ro definition = full_size_over_sqrt_pi
+Ro_x = target_size_x_m / sqrt(pi) = 0.000186182563 m
+Ro_y = target_size_y_m / sqrt(pi) = 6.770275e-05 m
+
+beta = 2*pi*ri*Ro/(lambda*f)
+beta_x = 9.060975545
+beta_y = 3.294900198
+
+Interpretation:
+- beta is the key dimensionless difficulty parameter in the Romero-Dickey stationary-phase approximation.
+- Larger beta usually gives a more geometrical-optics-like mapping and sharper flat-top behavior.
+- beta_y is smaller because the requested y size is only 120 um, so y-edge sharpness and uniformity are expected to be harder.
+- The 15 mm aperture is a clear aperture mask, not the 5 mm Gaussian beam diameter.

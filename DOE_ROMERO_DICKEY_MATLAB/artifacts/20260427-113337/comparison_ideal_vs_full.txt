@@ -1,0 +1,27 @@
+Ideal FFT baseline vs full propagation comparison
+=================================================
+
+Ideal baseline: DOE plane is assumed to be the Fourier transform pupil plane.
+Full propagation: DOE -> 0.2 m free space -> thin lens -> focal plane.
+
+Full model lens aperture enabled = 1
+Full model lens aperture diameter = 0.015 m
+
+FWHM_x_um                    ideal = 321.931222, full = 321.930574, full-ideal = -0.000648257103
+FWHM_y_um                    ideal = 109.25408, full = 109.254427, full-ideal = 0.000347250575
+transition_13_90_x_um        ideal = 49.5573926, full = 49.5545216, full-ideal = -0.00287102099
+transition_13_90_y_um        ideal = 46.202504, full = 46.2068731, full-ideal = 0.00436906845
+core_rms                     ideal = 0.163565466, full = 0.163559878, full-ideal = -5.58819804e-06
+peak_to_valley               ideal = 0.678722955, full = 0.678754709, full-ideal = 3.17546074e-05
+efficiency_target            ideal = 0.863962013, full = 0.86396255, full-ideal = 5.37485457e-07
+efficiency_guard             ideal = 0.993990471, full = 0.993990657, full-ideal = 1.85911073e-07
+side_lobe_x                  ideal = 0.109317107, full = 0.109322362, full-ideal = 5.25464208e-06
+side_lobe_y                  ideal = 0.254354111, full = 0.254341386, full-ideal = -1.27247238e-05
+overshoot_x                  ideal = 0.166707752, full = 0.166772214, full-ideal = 6.44618787e-05
+overshoot_y                  ideal = 0.0622107149, full = 0.0621861656, full-ideal = -2.45493382e-05
+
+Interpretation:
+- Use ideal_* outputs first to judge whether the Romero-Dickey separable phase is behaving as intended.
+- Use full_* outputs to evaluate degradation caused by the 200 mm DOE-to-lens propagation and real lens placement.
+- With infinite lens aperture and ideal scalar propagation, free-space propagation mainly adds phase and the focal intensity can be nearly identical to the ideal FFT baseline.
+- The default full model therefore applies a configurable lens aperture to expose practical clipping/deviation effects.
