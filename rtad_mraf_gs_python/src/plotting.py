@@ -190,16 +190,25 @@ def plot_profiles_compare(
     ref_n = normalize_intensity(refined_intensity, masks["mask_flat"], mode="flat_mean")
     init_p = center_profiles(init_n, target.x_um, target.y_um)
     ref_p = center_profiles(ref_n, target.x_um, target.y_um)
+    center_x = float(target.params.get("center_x_um", 0.0))
+    center_y = float(target.params.get("center_y_um", 0.0))
+    ix0 = int(np.argmin(np.abs(target.x_um - center_x)))
+    iy0 = int(np.argmin(np.abs(target.y_um - center_y)))
+    constraint_x = np.asarray(target.I_constraint[iy0, :], dtype=float)
+    constraint_y = np.asarray(target.I_constraint[:, ix0], dtype=float)
+    release_level = float(target.params.get("release_level", np.exp(-2.0)))
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
-    for ax, coord, tprof, iprof, rprof, half50, half0, half1, label in [
-        (axes[0], target.profiles["x_um"], target.profiles["x_I"], init_p["x_profile"], ref_p["x_profile"], target.params["a50_um"], target.params["a0_um"], target.params["a1_um"], "x"),
-        (axes[1], target.profiles["y_um"], target.profiles["y_I"], init_p["y_profile"], ref_p["y_profile"], target.params["b50_um"], target.params["b0_um"], target.params["b1_um"], "y"),
+    for ax, coord, full_prof, constraint_prof, iprof, rprof, half50, half0, half1, label in [
+        (axes[0], target.profiles["x_um"], target.profiles["x_I"], constraint_x, init_p["x_profile"], ref_p["x_profile"], target.params["a50_um"], target.params["a0_um"], target.params["a1_um"], "x"),
+        (axes[1], target.profiles["y_um"], target.profiles["y_I"], constraint_y, init_p["y_profile"], ref_p["y_profile"], target.params["b50_um"], target.params["b0_um"], target.params["b1_um"], "y"),
     ]:
-        ax.plot(coord, tprof, label="target I", linewidth=1.4)
+        ax.plot(coord, full_prof, label="I_full template", linewidth=1.2, color="0.45", linestyle="--")
+        ax.plot(coord, constraint_prof, label="I_constraint signal", linewidth=1.5, color="tab:blue")
         ax.plot(coord, iprof, label="initial", linewidth=1.0)
         ax.plot(coord, rprof, label="refined", linewidth=1.0)
         ax.axhline(0.5, color="0.4", linestyle=":", linewidth=1.0)
+        ax.axhline(release_level, color="tab:blue", linestyle="-.", linewidth=0.9, label="release_level")
         ax.axvline(-half0, color="0.5", linestyle="--", linewidth=0.9)
         ax.axvline(half0, color="0.5", linestyle="--", linewidth=0.9)
         ax.axvline(-half50, color="red", linestyle="-", linewidth=0.9)
