@@ -64,16 +64,15 @@ This local version keeps explicit masks instead of using `NaN` in the target.
 
 ## RTAD Target
 
-The target is defined first as intensity. The amplitude target used by GS/MRAF
-is then:
+The target is defined first as intensity. The full raised-cosine template is:
 
 ```text
-A_target = sqrt(I_target)
+I_full(x,y) = C(abs(x); a0, a1) * C(abs(y); b0, b1)
+A_full = sqrt(I_full)
 ```
 
-The intensity size50 is fixed to 330 um x 120 um. With
-`a50 = W50/2` and `b50 = H50/2`, the first version uses a separable
-raised-cosine edge:
+The intensity size50 remains fixed to 330 um x 120 um. With `a50 = W50/2`
+and `b50 = H50/2`, the separable raised-cosine edge is:
 
 ```text
 a0 = a50 - delta_x_um
@@ -85,11 +84,29 @@ C(u; u0, u1) = 1                                      for u <= u0
              = 0.5 * (1 + cos(pi*(u-u0)/(u1-u0)))     for u0 < u < u1
              = 0                                      for u >= u1
 
-I_target(x,y) = C(abs(x); a0, a1) * C(abs(y); b0, b1)
 ```
 
-Masks are separated into flat core, descending edge, support, free guard band,
-and background. Flat uniformity metrics use only the flat core, not the edge.
+The current default constraint mode is truncated RTAD:
+
+```text
+release_level = exp(-2) = 0.1353352832366127
+mask_flat = abs(x) <= a0 and abs(y) <= b0
+mask_signal = (I_full >= release_level) OR mask_flat
+mask_edge_lock = mask_signal AND NOT mask_flat
+mask_template_support = I_full > 0
+mask_free = guard_window AND NOT mask_signal
+mask_bg_far = NOT (mask_signal OR mask_free)
+```
+
+The old target constrained every `I_full > 0` pixel. The new target only
+constrains `mask_signal`. The low-intensity tail between `release_level` and 0
+is released into the MRAF free/noise region. This avoids forcing the DOE result
+to follow a full mathematical tail all the way to zero, which can over-smooth
+the edge and suppress physically useful sidelobe/halo structure.
+
+`mask_support` is kept as a compatibility alias, but now means constrained
+signal support, not full template support. Flat uniformity metrics use only the
+fixed `mask_flat`, not the edge or free region.
 
 ## Refinement Formula
 
@@ -104,12 +121,12 @@ phase = angle(IFFT(E_far'))
 MRAF projection in this implementation:
 
 ```text
-signal/support:  E_far' = W * exp(i angle(E_far))
-free guard band: E_far' = mraf_factor * E_far
-background:      keep, attenuate, or zero according to bg_mode
+mask_signal: E_far' = W * exp(i angle(E_far))
+mask_free:   E_far' = mraf_factor * E_far
+mask_bg_far: keep, attenuate by bg_factor, or zero according to bg_mode
 ```
 
-Default `bg_mode="attenuate"` and `bg_factor=0.25` weakly constrain the far
+Default `bg_mode="attenuate"` and `bg_factor=0.05` weakly constrain the far
 background without hard-zeroing everything outside the support. This is
 intentional for RTAD edge behavior.
 
@@ -131,6 +148,12 @@ cd E:\program\Point2P\rtad_mraf_gs_python
 & 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --iters 200 --method mraf --mraf-factor 0.4
 ```
 
+Equivalent explicit truncated-target run:
+
+```powershell
+& 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --iters 200 --method mraf --mraf-factor 0.4 --constraint-mode truncated_rtad --release-level 0.1353352832366127 --bg-factor 0.05
+```
+
 By default this program applies `swap_phase_xy = True` to imported `phase0`
 files, because the current MATLAB v7.3 `phase0` orientation appears x/y swapped
 when read into Python. Use `--no-swap-phase-xy` only if a future input file has
@@ -149,8 +172,11 @@ Useful overrides:
 - `--iters`
 - `--method`
 - `--mraf-factor`
+- `--constraint-mode`
+- `--release-level`
 - `--delta-x`
 - `--delta-y`
+- `--bg-factor`
 - `--outdir`
 - `--use-cupy` / `--no-cupy`
 - `--swap-phase-xy` / `--no-swap-phase-xy`
@@ -168,6 +194,9 @@ is supplied. Saved files include:
 - `reconstruction_refined.npy`
 - `metrics.csv`
 - `report.txt`
+- `target_full_intensity.png`
+- `target_constraint_intensity.png`
+- `target_profiles.png`
 - `target_intensity.png`
 - `target_amplitude.png`
 - `masks.png`
@@ -196,6 +225,9 @@ The lightweight Python diagnostics can also be run on an existing case:
 method = mraf
 num_iters = 200
 mraf_factor = 0.4 or 0.5
+constraint_mode = truncated_rtad
+release_level = 0.1353352832366127
+bg_factor = 0.05
 delta_x_um = 15
 delta_y_um = 8
 guard_x_um = 20

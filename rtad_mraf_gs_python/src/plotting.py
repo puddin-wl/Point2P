@@ -33,47 +33,107 @@ def _set_zoom(ax: Any, params: dict[str, Any], margin_um: float = 60.0) -> None:
 
 
 def plot_target(target: Any, outdir: str | Path, dpi: int = 150) -> None:
-    """Save target intensity and amplitude plots."""
+    """Save target template and truncated-constraint plots."""
     outdir = Path(outdir)
-    for name, arr, title in [
-        ("target_intensity.png", target.I_target, "RTAD target intensity"),
-        ("target_amplitude.png", target.A_target, "RTAD target amplitude"),
-    ]:
-        fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
-        im = ax.imshow(arr, extent=_extent(target.x_um, target.y_um), origin="lower", cmap="viridis")
-        fig.colorbar(im, ax=ax, label="normalized")
-        _plot_rect(ax, target.params["a0_um"], target.params["b0_um"], "--", "flat core", "white")
-        _plot_rect(ax, target.params["a50_um"], target.params["b50_um"], "-", "size50", "red")
-        _plot_rect(ax, target.params["a1_um"], target.params["b1_um"], ":", "outer edge", "white")
-        _set_zoom(ax, target.params)
-        ax.set_xlabel("x / um")
-        ax.set_ylabel("y / um")
-        ax.set_title(title)
-        ax.legend(loc="upper right", fontsize=8)
-        fig.savefig(outdir / name, dpi=dpi)
-        plt.close(fig)
+    release_level = float(target.params.get("release_level", np.exp(-2.0)))
+
+    fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
+    im = ax.imshow(target.I_full, extent=_extent(target.x_um, target.y_um), origin="lower", cmap="viridis", vmin=0, vmax=1)
+    fig.colorbar(im, ax=ax, label="I_full")
+    ax.contour(target.x_um, target.y_um, target.I_full, levels=[release_level], colors="cyan", linewidths=1.1)
+    _plot_rect(ax, target.params["a0_um"], target.params["b0_um"], "--", "flat core", "white")
+    _plot_rect(ax, target.params["a50_um"], target.params["b50_um"], "-", "size50", "red")
+    _plot_rect(ax, target.params["a1_um"], target.params["b1_um"], ":", "outer zero", "white")
+    _set_zoom(ax, target.params)
+    ax.set_xlabel("x / um")
+    ax.set_ylabel("y / um")
+    ax.set_title(f"Full RTAD intensity template, release={release_level:.6g}")
+    ax.legend(loc="upper right", fontsize=8)
+    fig.savefig(outdir / "target_full_intensity.png", dpi=dpi)
+    fig.savefig(outdir / "target_intensity.png", dpi=dpi)
+    plt.close(fig)
+
+    cmap = plt.get_cmap("viridis").copy()
+    cmap.set_bad(color="0.6")
+    fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
+    im = ax.imshow(target.I_constraint, extent=_extent(target.x_um, target.y_um), origin="lower", cmap=cmap, vmin=0, vmax=1)
+    fig.colorbar(im, ax=ax, label="I_constraint")
+    ax.contour(target.x_um, target.y_um, target.mask_signal.astype(float), levels=[0.5], colors="cyan", linewidths=1.0)
+    ax.contour(target.x_um, target.y_um, target.mask_free.astype(float), levels=[0.5], colors="lime", linewidths=1.0)
+    _plot_rect(ax, target.params["a0_um"], target.params["b0_um"], "--", "flat core", "white")
+    _set_zoom(ax, target.params)
+    ax.set_xlabel("x / um")
+    ax.set_ylabel("y / um")
+    ax.set_title("Truncated RTAD constraint: cyan=signal, green=free")
+    ax.legend(loc="upper right", fontsize=8)
+    fig.savefig(outdir / "target_constraint_intensity.png", dpi=dpi)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
+    im = ax.imshow(target.A_full, extent=_extent(target.x_um, target.y_um), origin="lower", cmap="viridis", vmin=0, vmax=1)
+    fig.colorbar(im, ax=ax, label="A_full")
+    _plot_rect(ax, target.params["a0_um"], target.params["b0_um"], "--", "flat core", "white")
+    _plot_rect(ax, target.params["a50_um"], target.params["b50_um"], "-", "size50", "red")
+    _plot_rect(ax, target.params["a1_um"], target.params["b1_um"], ":", "outer zero", "white")
+    _set_zoom(ax, target.params)
+    ax.set_xlabel("x / um")
+    ax.set_ylabel("y / um")
+    ax.set_title("Full RTAD amplitude template")
+    ax.legend(loc="upper right", fontsize=8)
+    fig.savefig(outdir / "target_amplitude.png", dpi=dpi)
+    plt.close(fig)
+
+    plot_target_profiles(target, outdir, dpi=dpi)
 
 
 def plot_masks(target: Any, outdir: str | Path, dpi: int = 150) -> None:
     """Save a discrete mask map."""
     outdir = Path(outdir)
-    mask_show = np.zeros_like(target.I_target, dtype=np.uint8)
-    mask_show[target.mask_bg] = 0
+    mask_show = np.zeros_like(target.I_full, dtype=np.uint8)
+    mask_show[target.mask_bg_far] = 4
     mask_show[target.mask_free] = 3
-    mask_show[target.mask_edge] = 2
+    mask_show[target.mask_edge_lock] = 2
     mask_show[target.mask_flat] = 1
     fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
-    im = ax.imshow(mask_show, extent=_extent(target.x_um, target.y_um), origin="lower", cmap="tab10", vmin=0, vmax=3)
-    cbar = fig.colorbar(im, ax=ax, ticks=[0, 1, 2, 3])
-    cbar.ax.set_yticklabels(["bg", "flat", "edge", "free"])
+    im = ax.imshow(mask_show, extent=_extent(target.x_um, target.y_um), origin="lower", cmap="tab10", vmin=1, vmax=4)
+    cbar = fig.colorbar(im, ax=ax, ticks=[1, 2, 3, 4])
+    cbar.ax.set_yticklabels(["flat", "edge_lock", "free", "far_bg"])
     _plot_rect(ax, target.params["a0_um"], target.params["b0_um"], "--", "flat core", "white")
     _plot_rect(ax, target.params["a50_um"], target.params["b50_um"], "-", "size50", "red")
     _plot_rect(ax, target.params["a1_um"], target.params["b1_um"], ":", "outer edge", "white")
     _set_zoom(ax, target.params)
     ax.set_xlabel("x / um")
     ax.set_ylabel("y / um")
-    ax.set_title("RTAD masks")
+    ax.set_title("Masks: 1=flat, 2=edge_lock, 3=free, 4=far_bg")
     fig.savefig(outdir / "masks.png", dpi=dpi)
+    plt.close(fig)
+
+
+def plot_target_profiles(target: Any, outdir: str | Path, dpi: int = 150) -> None:
+    """Save full-template center profiles with release and geometry markers."""
+    outdir = Path(outdir)
+    release_level = float(target.params.get("release_level", np.exp(-2.0)))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+    panels = [
+        (axes[0], target.profiles["x_um"], target.profiles["x_I"], "x", ["a0_um", "a50_um", "a1_um", "a2_um"]),
+        (axes[1], target.profiles["y_um"], target.profiles["y_I"], "y", ["b0_um", "b50_um", "b1_um", "b2_um"]),
+    ]
+    for ax, coord, profile, label, keys in panels:
+        ax.plot(coord, profile, linewidth=1.4, label=f"I_full {label} profile")
+        for level, name in [(0.9, "90%"), (0.5, "50%"), (np.exp(-2.0), "13.5%"), (release_level, "release")]:
+            ax.axhline(level, linestyle=":", linewidth=0.9, label=name)
+        styles = ["--", "-", ":", "-."]
+        colors = ["0.4", "red", "0.4", "tab:green"]
+        for key, style, color in zip(keys, styles, colors):
+            val = float(target.params[key])
+            ax.axvline(-val, color=color, linestyle=style, linewidth=0.9)
+            ax.axvline(val, color=color, linestyle=style, linewidth=0.9, label=key)
+        ax.set_xlabel(f"{label} / um")
+        ax.set_ylabel("I_full")
+        ax.set_ylim(-0.05, 1.08)
+        ax.grid(True, alpha=0.25)
+        ax.legend(fontsize=8)
+    fig.savefig(outdir / "target_profiles.png", dpi=dpi)
     plt.close(fig)
 
 

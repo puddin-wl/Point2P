@@ -72,7 +72,7 @@ def _project_farfield(
     """Apply the farfield amplitude constraint for GS, MRAF, or WGS."""
     phase_ff = xp.angle(farfield)
     phase_factor = xp.exp(1j * phase_ff).astype(farfield.dtype, copy=False)
-    signal = masks_b["mask_support"]
+    signal = masks_b.get("mask_signal", masks_b["mask_support"])
 
     if method in {"gs", "wgs"}:
         projected = xp.zeros_like(farfield)
@@ -85,7 +85,7 @@ def _project_farfield(
     free = masks_b["mask_free"]
     projected[free] *= mraf_factor
 
-    bg = masks_b["mask_bg"] & ~masks_b["mask_free"]
+    bg = masks_b.get("mask_bg_far", masks_b["mask_bg"] & ~masks_b["mask_free"])
     if bg_mode == "keep":
         pass
     elif bg_mode == "attenuate":
@@ -119,7 +119,7 @@ def run_refinement(
     feedback_exponent: float = 0.7,
     wgs_update_region: str = "flat",
     bg_mode: str = "attenuate",
-    bg_factor: float = 0.25,
+    bg_factor: float = 0.05,
     wgs_clip_min: float = 0.5,
     wgs_clip_max: float = 2.0,
     metrics_interval: int = 10,
@@ -129,14 +129,16 @@ def run_refinement(
 
     MRAF formula used here:
 
-    - signal/support pixels: ``E' = W * exp(i * angle(E))``
-    - free guard band: ``E' = mraf_factor * E``
-    - background: keep, attenuate by ``bg_factor``, or zero by option
+    - signal pixels: ``E' = W * exp(i * angle(E))``
+    - free/noise pixels: ``E' = mraf_factor * E``
+    - far background: keep, attenuate by ``bg_factor``, or zero by option
 
     This follows slmsuite's convention that ``mraf_factor=0`` fully attenuates
     a noise/free region while ``mraf_factor=1`` leaves it unchanged. The main
-    project difference is that the far background is only weakly constrained by
-    default instead of being hard-zeroed.
+    project difference is the truncated RTAD target: only ``mask_signal``
+    follows the target amplitude. The low-intensity full-template tail is
+    released into ``mask_free`` and is not forced to match the mathematical
+    raised-cosine curve.
     """
     method_l = method.lower()
     if method_l not in {"gs", "mraf", "wgs", "mraf_then_wgs"}:
@@ -151,7 +153,7 @@ def run_refinement(
     input_amp_b = input_amp_b / l2_norm(input_amp_b, xp)
 
     masks_b = {k: backend.to_backend(v, dtype=bool) for k, v in masks.items()}
-    signal = masks_b["mask_support"]
+    signal = masks_b.get("mask_signal", masks_b["mask_support"])
     base_target = _normalize_target_amp(target_amp, signal, xp, dtype)
     weights = base_target.copy()
 

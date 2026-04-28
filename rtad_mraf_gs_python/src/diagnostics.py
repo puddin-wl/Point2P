@@ -55,6 +55,9 @@ class CaseData:
     mask_flat: np.ndarray
     mask_edge: np.ndarray
     mask_support: np.ndarray
+    mask_signal: np.ndarray
+    mask_free: np.ndarray
+    mask_template_support: np.ndarray
     params: dict[str, Any]
     intensity_source: str
 
@@ -87,12 +90,23 @@ def _load_target_from_npz(path: Path) -> dict[str, Any]:
     """Load target axes and masks from ``target.npz``."""
     data = np.load(path, allow_pickle=True)
     params = _loads_jsonish(data["params"]) if "params" in data else {}
+    mask_support = np.asarray(data["mask_support"], dtype=bool)
+    mask_signal = np.asarray(data["mask_signal"], dtype=bool) if "mask_signal" in data else mask_support
+    mask_free = np.asarray(data["mask_free"], dtype=bool) if "mask_free" in data else np.zeros_like(mask_signal)
+    mask_template_support = (
+        np.asarray(data["mask_template_support"], dtype=bool)
+        if "mask_template_support" in data
+        else mask_support
+    )
     return {
         "x_um": np.asarray(data["x_um"], dtype=np.float64).reshape(-1),
         "y_um": np.asarray(data["y_um"], dtype=np.float64).reshape(-1),
         "mask_flat": np.asarray(data["mask_flat"], dtype=bool),
         "mask_edge": np.asarray(data["mask_edge"], dtype=bool),
-        "mask_support": np.asarray(data["mask_support"], dtype=bool),
+        "mask_support": mask_signal,
+        "mask_signal": mask_signal,
+        "mask_free": mask_free,
+        "mask_template_support": mask_template_support,
         "params": params,
     }
 
@@ -101,12 +115,23 @@ def _load_target_from_mat(path: Path) -> dict[str, Any]:
     """Load target axes and masks from ``target.mat``."""
     data = loadmat(path)
     params = _loads_jsonish(data["params_json"]) if "params_json" in data else {}
+    mask_support = np.asarray(data["mask_support"], dtype=bool)
+    mask_signal = np.asarray(data["mask_signal"], dtype=bool) if "mask_signal" in data else mask_support
+    mask_free = np.asarray(data["mask_free"], dtype=bool) if "mask_free" in data else np.zeros_like(mask_signal)
+    mask_template_support = (
+        np.asarray(data["mask_template_support"], dtype=bool)
+        if "mask_template_support" in data
+        else mask_support
+    )
     return {
         "x_um": np.asarray(data["x_um"], dtype=np.float64).reshape(-1),
         "y_um": np.asarray(data["y_um"], dtype=np.float64).reshape(-1),
         "mask_flat": np.asarray(data["mask_flat"], dtype=bool),
         "mask_edge": np.asarray(data["mask_edge"], dtype=bool),
-        "mask_support": np.asarray(data["mask_support"], dtype=bool),
+        "mask_support": mask_signal,
+        "mask_signal": mask_signal,
+        "mask_free": mask_free,
+        "mask_template_support": mask_template_support,
         "params": params,
     }
 
@@ -126,6 +151,9 @@ def _regenerate_target(config: dict[str, Any], shape: tuple[int, int]) -> dict[s
         "mask_flat": target.mask_flat,
         "mask_edge": target.mask_edge,
         "mask_support": target.mask_support,
+        "mask_signal": target.mask_signal,
+        "mask_free": target.mask_free,
+        "mask_template_support": target.mask_template_support,
         "params": target.params,
     }
 
@@ -187,7 +215,7 @@ def load_case_data(case_dir: str | Path) -> CaseData:
     else:
         target = _regenerate_target(config, intensity_raw.shape)
 
-    required = ("mask_flat", "mask_edge", "mask_support")
+    required = ("mask_flat", "mask_edge", "mask_support", "mask_signal", "mask_free", "mask_template_support")
     for key in required:
         if target[key].shape != intensity_raw.shape:
             raise ValueError(f"{key} shape {target[key].shape} does not match intensity shape {intensity_raw.shape}.")
@@ -201,6 +229,9 @@ def load_case_data(case_dir: str | Path) -> CaseData:
         mask_flat=np.asarray(target["mask_flat"], dtype=bool),
         mask_edge=np.asarray(target["mask_edge"], dtype=bool),
         mask_support=np.asarray(target["mask_support"], dtype=bool),
+        mask_signal=np.asarray(target["mask_signal"], dtype=bool),
+        mask_free=np.asarray(target["mask_free"], dtype=bool),
+        mask_template_support=np.asarray(target["mask_template_support"], dtype=bool),
         params=dict(target.get("params", {})),
         intensity_source=intensity_source,
     )
@@ -586,6 +617,12 @@ def write_diagnostics_report(path: Path, data: CaseData, metrics: dict[str, Any]
         "  e^-2 efficiency uses raw intensity inside the measured 13.5% rectangle divided by total raw intensity.",
         "  Derivative sidelobe score integrates positive dI/dr after the outward 90% crossing.",
         "  Physical meaning: from center outward, intensity should decrease monotonically; positive derivative means the profile re-brightens and may indicate a side lobe, shoulder, or edge spike.",
+        "",
+        "Target mask areas:",
+        f"  mask_signal pixels: {int(np.count_nonzero(data.mask_signal))}",
+        f"  mask_free pixels: {int(np.count_nonzero(data.mask_free))}",
+        f"  mask_template_support pixels: {int(np.count_nonzero(data.mask_template_support))}",
+        "  mask_support is treated as the constrained signal support in the truncated RTAD Python workflow.",
         "",
         "Metrics:",
     ]

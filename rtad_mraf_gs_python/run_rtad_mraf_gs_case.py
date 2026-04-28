@@ -41,6 +41,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--iters", type=int, default=None, help="Number of refinement iterations.")
     parser.add_argument("--method", default=None, choices=["gs", "mraf", "wgs", "mraf_then_wgs"], help="Refinement method.")
     parser.add_argument("--mraf-factor", type=float, default=None, help="MRAF free-region attenuation factor.")
+    parser.add_argument("--constraint-mode", default=None, choices=["truncated_rtad", "full_rtad"], help="Target constraint mode.")
+    parser.add_argument("--release-level", type=float, default=None, help="Intensity release threshold for truncated RTAD.")
+    parser.add_argument("--target-mode", default=None, choices=["separable"], help="Full RTAD template mode.")
     parser.add_argument("--delta-x", type=float, default=None, help="RTAD x falling-edge half width in um.")
     parser.add_argument("--delta-y", type=float, default=None, help="RTAD y falling-edge half width in um.")
     parser.add_argument("--outdir", default=None, help="Output directory. If omitted, timestamped artifacts dir is used.")
@@ -76,6 +79,12 @@ def apply_overrides(config: dict, args: argparse.Namespace) -> dict:
         cfg["refinement"]["method"] = args.method
     if args.mraf_factor is not None:
         cfg["refinement"]["mraf_factor"] = args.mraf_factor
+    if args.constraint_mode is not None:
+        cfg["target"]["constraint_mode"] = args.constraint_mode
+    if args.release_level is not None:
+        cfg["target"]["release_level"] = args.release_level
+    if args.target_mode is not None:
+        cfg["target"]["target_mode"] = args.target_mode
     if args.delta_x is not None:
         cfg["target"]["delta_x_um"] = args.delta_x
     if args.delta_y is not None:
@@ -141,7 +150,11 @@ def make_output_dir(cfg: dict, args: argparse.Namespace) -> Path:
     if args.outdir:
         return ensure_unique_dir(args.outdir)
     root = THIS_DIR / cfg["paths"]["out_root"]
-    name = f"{timestamp()}_rtad_mraf_gs"
+    suffix = ""
+    if cfg.get("target", {}).get("constraint_mode") == "truncated_rtad":
+        rel = float(cfg.get("target", {}).get("release_level", 0.0))
+        suffix = f"_truncI{int(round(rel * 1000)):04d}"
+    name = f"{timestamp()}_rtad_mraf_gs{suffix}"
     return ensure_unique_dir(root / name)
 
 
@@ -149,9 +162,19 @@ def save_target_outputs(outdir: Path, target) -> None:
     """Save target arrays to NPZ and MAT files."""
     np.savez_compressed(
         outdir / "target.npz",
+        I_full=target.I_full,
+        A_full=target.A_full,
+        I_constraint=target.I_constraint,
+        A_constraint=target.A_constraint,
+        A_signal=target.A_signal,
         I_target=target.I_target,
         A_target=target.A_target,
         mask_flat=target.mask_flat,
+        mask_edge_lock=target.mask_edge_lock,
+        mask_signal=target.mask_signal,
+        mask_template_support=target.mask_template_support,
+        mask_guard_window=target.mask_guard_window,
+        mask_bg_far=target.mask_bg_far,
         mask_edge=target.mask_edge,
         mask_support=target.mask_support,
         mask_bg=target.mask_bg,
@@ -164,9 +187,19 @@ def save_target_outputs(outdir: Path, target) -> None:
     savemat(
         outdir / "target.mat",
         {
+            "I_full": target.I_full,
+            "A_full": target.A_full,
+            "I_constraint": target.I_constraint,
+            "A_constraint": target.A_constraint,
+            "A_signal": target.A_signal,
             "I_target": target.I_target,
             "A_target": target.A_target,
             "mask_flat": target.mask_flat,
+            "mask_edge_lock": target.mask_edge_lock,
+            "mask_signal": target.mask_signal,
+            "mask_template_support": target.mask_template_support,
+            "mask_guard_window": target.mask_guard_window,
+            "mask_bg_far": target.mask_bg_far,
             "mask_edge": target.mask_edge,
             "mask_support": target.mask_support,
             "mask_bg": target.mask_bg,
@@ -191,12 +224,25 @@ def write_report(outdir: Path, cfg: dict, phase_info: dict, target, result) -> N
         "Target measured size50:",
         f"  W50_x_um = {target.measured['W50_x_um']:.9g}",
         f"  H50_y_um = {target.measured['H50_y_um']:.9g}",
+        f"  full_template_size13p5_x_um = {target.measured['full_template_size13p5_x_um']:.9g}",
+        f"  full_template_size13p5_y_um = {target.measured['full_template_size13p5_y_um']:.9g}",
+        "",
+        "Target constraint semantics:",
+        "  old/full RTAD constrained every I_full > 0 pixel.",
+        "  truncated RTAD constrains only I_full >= release_level.",
+        "  the low-intensity full-template tail goes to the MRAF free/noise region.",
+        f"  constraint_mode = {target.params.get('constraint_mode')}",
+        f"  release_level = {target.params.get('release_level')}",
+        f"  mask_signal pixels = {target.params.get('mask_signal_pixels')}",
+        f"  mask_free pixels = {target.params.get('mask_free_pixels')}",
+        f"  mask_template_support pixels = {target.params.get('mask_template_support_pixels')}",
         "",
         "MRAF projection formula:",
-        "  signal/support: E' = W * exp(i * angle(E))",
-        "  free guard band: E' = mraf_factor * E",
-        "  background: keep, attenuate, or zero according to bg_mode",
+        "  mask_signal: E' = W * exp(i * angle(E))",
+        "  mask_free: E' = mraf_factor * E",
+        "  mask_bg_far: keep, attenuate by bg_factor, or zero according to bg_mode",
         "  mraf_factor=0 fully attenuates the free region; mraf_factor=1 keeps it unchanged.",
+        f"  bg_mode = {cfg['refinement'].get('bg_mode')}, bg_factor = {cfg['refinement'].get('bg_factor')}",
         "",
         "Final metrics:",
         format_metrics(result.final_metrics),
@@ -269,7 +315,7 @@ def main() -> int:
     result = run_refinement(
         phase0=phase0,
         input_amp=input_amp,
-        target_amp=target.A_target,
+        target_amp=target.A_signal,
         masks=target.masks(),
         x_um=target.x_um,
         y_um=target.y_um,
