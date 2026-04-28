@@ -130,14 +130,30 @@ Default `bg_mode="attenuate"` and `bg_factor=0.05` weakly constrain the far
 background without hard-zeroing everything outside the support. This is
 intentional for RTAD edge behavior.
 
-WGS uses a simplified Leonardo-style update on `mask_flat` by default:
+`mraf_then_wgs` is now the default refinement mode. It first runs MRAF, then
+keeps the same truncated-RTAD signal/free/background projection while updating
+only flat-core target weights:
 
 ```text
-W <- W * (T / F)^feedback_exponent
+MRAF stage:
+  mask_signal: E_far' = A_target * exp(i angle(E_far))
+  mask_free:   E_far' = mraf_factor * E_far
+  mask_bg_far: E_far' = bg_factor * E_far
+
+WGS stage:
+  target_amp_eff = target_amp
+  target_amp_eff[mask_flat] = target_amp[mask_flat] * weights[mask_flat]
+
+  every wgs_update_every WGS iterations:
+    amp_mean = mean(abs(E_far)[mask_flat])
+    weights[mask_flat] *= (amp_mean / (abs(E_far)[mask_flat] + eps))^wgs_feedback_exponent
+    weights[mask_flat] = clip(weights[mask_flat], wgs_weight_min, wgs_weight_max)
+    weights[mask_flat] /= mean(weights[mask_flat])
 ```
 
-where `F` is the current farfield amplitude scaled to the target signal power.
-Weights are clipped and L2 normalized after each update.
+WGS does not update `mask_edge_lock`, `mask_free`, or `mask_bg_far`. It is only
+a flat-core uniformity feedback; it does not use size50, e^-2 efficiency, or
+diagnostics-side metrics as constraints.
 
 ## How To Run
 
@@ -152,6 +168,12 @@ Equivalent explicit truncated-target run:
 
 ```powershell
 & 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --iters 200 --method mraf --mraf-factor 0.4 --constraint-mode truncated_rtad --release-level 0.1353352832366127 --bg-factor 0.05
+```
+
+Recommended MRAF followed by flat-core WGS:
+
+```powershell
+& 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --method mraf_then_wgs --mraf-iters 150 --wgs-iters 50 --mraf-factor 0.4 --wgs-feedback-exponent 0.3 --wgs-update-every 5 --release-level 0.1353352832366127 --bg-factor 0.05
 ```
 
 By default this program applies `swap_phase_xy = True` to imported `phase0`
@@ -191,7 +213,10 @@ is supplied. Saved files include:
 - `target.npz`
 - `phase_refined.mat`
 - `phase_refined.npy`
+- `phase_after_mraf.npy`
 - `reconstruction_refined.npy`
+- `reconstruction_after_mraf.npy`
+- `wgs_weights_final.npy`
 - `metrics.csv`
 - `report.txt`
 - `target_full_intensity.png`
@@ -203,6 +228,9 @@ is supplied. Saved files include:
 - `initial_reconstruction_intensity.png`
 - `refined_reconstruction_intensity.png`
 - `center_profiles_compare.png`
+- `center_profiles_compare_initial_mraf_wgs.png`
+- `wgs_weights_final.png`
+- `wgs_weight_hist.png`
 - `phase0.png`
 - `phase_refined.png`
 - `convergence_metrics.png`
@@ -222,12 +250,19 @@ The lightweight Python diagnostics can also be run on an existing case:
 ## First Recommended Parameters
 
 ```text
-method = mraf
-num_iters = 200
-mraf_factor = 0.4 or 0.5
+method = mraf_then_wgs
+mraf_iters = 150
+wgs_iters = 50
+mraf_factor = 0.4
 constraint_mode = truncated_rtad
 release_level = 0.1353352832366127
 bg_factor = 0.05
+wgs_update_mask = flat
+wgs_feedback = amplitude
+wgs_feedback_exponent = 0.3
+wgs_update_every = 5
+wgs_weight_min = 0.5
+wgs_weight_max = 2.0
 delta_x_um = 15
 delta_y_um = 8
 guard_x_um = 20

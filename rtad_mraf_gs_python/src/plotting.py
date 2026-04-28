@@ -226,6 +226,124 @@ def plot_profiles_compare(
     plt.close(fig)
 
 
+def plot_profiles_compare_initial_mraf_wgs(
+    target: Any,
+    initial_intensity: np.ndarray,
+    mraf_intensity: np.ndarray,
+    wgs_intensity: np.ndarray,
+    masks: dict[str, np.ndarray],
+    outdir: str | Path,
+    dpi: int = 150,
+) -> None:
+    """Save center profiles for initial, MRAF-end, and final WGS outputs."""
+    outdir = Path(outdir)
+    init_n = normalize_intensity(initial_intensity, masks["mask_flat"], mode="flat_mean")
+    mraf_n = normalize_intensity(mraf_intensity, masks["mask_flat"], mode="flat_mean")
+    wgs_n = normalize_intensity(wgs_intensity, masks["mask_flat"], mode="flat_mean")
+    init_p = center_profiles(init_n, target.x_um, target.y_um)
+    mraf_p = center_profiles(mraf_n, target.x_um, target.y_um)
+    wgs_p = center_profiles(wgs_n, target.x_um, target.y_um)
+    release_level = float(target.params.get("release_level", np.exp(-2.0)))
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+    for ax, coord, iprof, mprof, wprof, half50, half0, half1, label in [
+        (
+            axes[0],
+            target.profiles["x_um"],
+            init_p["x_profile"],
+            mraf_p["x_profile"],
+            wgs_p["x_profile"],
+            target.params["a50_um"],
+            target.params["a0_um"],
+            target.params["a1_um"],
+            "x",
+        ),
+        (
+            axes[1],
+            target.profiles["y_um"],
+            init_p["y_profile"],
+            mraf_p["y_profile"],
+            wgs_p["y_profile"],
+            target.params["b50_um"],
+            target.params["b0_um"],
+            target.params["b1_um"],
+            "y",
+        ),
+    ]:
+        ax.plot(coord, iprof, label="initial", linewidth=0.9, alpha=0.8)
+        ax.plot(coord, mprof, label="after MRAF", linewidth=1.1)
+        ax.plot(coord, wprof, label="after WGS", linewidth=1.1)
+        ax.axhline(0.9, color="0.45", linestyle=":", linewidth=0.8, label="90%")
+        ax.axhline(0.5, color="0.35", linestyle=":", linewidth=0.9, label="50%")
+        ax.axhline(np.exp(-2.0), color="0.45", linestyle=":", linewidth=0.8, label="13.5%")
+        ax.axhline(release_level, color="tab:blue", linestyle="-.", linewidth=0.8, label="release")
+        ax.axvline(-half0, color="0.5", linestyle="--", linewidth=0.8)
+        ax.axvline(half0, color="0.5", linestyle="--", linewidth=0.8)
+        ax.axvline(-half50, color="red", linestyle="-", linewidth=0.8)
+        ax.axvline(half50, color="red", linestyle="-", linewidth=0.8)
+        ax.axvline(-half1, color="0.5", linestyle=":", linewidth=0.8)
+        ax.axvline(half1, color="0.5", linestyle=":", linewidth=0.8)
+        ax.set_xlim(-half1 - 80, half1 + 80)
+        ax.set_ylim(0, max(2.0, float(np.nanpercentile(wprof, 99.5))))
+        ax.grid(True, alpha=0.25)
+        ax.set_xlabel(f"{label} / um")
+        ax.set_ylabel("I / mean(flat)")
+        ax.set_title(f"{label} center profile")
+        ax.legend(fontsize=8)
+    fig.savefig(outdir / "center_profiles_compare_initial_mraf_wgs.png", dpi=dpi)
+    plt.close(fig)
+
+
+def plot_wgs_weights(
+    weights: np.ndarray,
+    mask_flat: np.ndarray,
+    x_um: np.ndarray,
+    y_um: np.ndarray,
+    outdir: str | Path,
+    dpi: int = 150,
+) -> None:
+    """Save final WGS flat-core weights as an image and histogram."""
+    outdir = Path(outdir)
+    weights = np.asarray(weights, dtype=np.float32)
+    mask_flat = np.asarray(mask_flat, dtype=bool)
+    display = np.full_like(weights, np.nan, dtype=np.float32)
+    display[mask_flat] = weights[mask_flat]
+    vals = weights[mask_flat]
+
+    cmap = plt.get_cmap("viridis").copy()
+    cmap.set_bad(color="0.65")
+    fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
+    if vals.size and np.all(np.isfinite(vals)):
+        vmin = float(np.nanpercentile(vals, 1))
+        vmax = float(np.nanpercentile(vals, 99))
+        if abs(vmax - vmin) < 1e-6:
+            vmin, vmax = float(np.nanmin(vals)), float(np.nanmax(vals) + 1e-6)
+    else:
+        vmin, vmax = 0.5, 2.0
+    im = ax.imshow(display, extent=_extent(x_um, y_um), origin="lower", cmap=cmap, vmin=vmin, vmax=vmax)
+    fig.colorbar(im, ax=ax, label="WGS weight")
+    ax.set_xlabel("x / um")
+    ax.set_ylabel("y / um")
+    ax.set_title("Final WGS weights in mask_flat")
+    if vals.size:
+        x_vals = np.asarray(x_um)
+        y_vals = np.asarray(y_um)
+        yy, xx = np.where(mask_flat)
+        ax.set_xlim(float(x_vals[max(0, xx.min() - 20)]), float(x_vals[min(x_vals.size - 1, xx.max() + 20)]))
+        ax.set_ylim(float(y_vals[max(0, yy.min() - 20)]), float(y_vals[min(y_vals.size - 1, yy.max() + 20)]))
+    fig.savefig(outdir / "wgs_weights_final.png", dpi=dpi)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(6, 4), constrained_layout=True)
+    ax.hist(vals[np.isfinite(vals)], bins=60, color="tab:blue", alpha=0.85)
+    ax.set_xlabel("WGS weight in mask_flat")
+    ax.set_ylabel("count")
+    ax.set_title("Final WGS weight distribution")
+    ax.grid(True, alpha=0.25)
+    fig.savefig(outdir / "wgs_weight_hist.png", dpi=dpi)
+    plt.close(fig)
+
+
 def plot_convergence(metrics_history: list[dict[str, Any]], outdir: str | Path, dpi: int = 150) -> None:
     """Save convergence curves from the metrics history."""
     outdir = Path(outdir)
