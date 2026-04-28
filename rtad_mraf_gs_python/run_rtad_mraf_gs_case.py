@@ -17,6 +17,7 @@ if str(THIS_DIR) not in sys.path:
 
 from config_default import CONFIG
 from src.backend import get_backend
+from src.diagnostics import run_case_diagnostics
 from src.io_mat import load_optional_mat_variable, load_phase_mat, save_phase_mat
 from src.mraf_gs import run_refinement
 from src.plotting import (
@@ -54,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bg-mode", choices=["keep", "attenuate", "zero"], default=None, help="MRAF background handling.")
     parser.add_argument("--bg-factor", type=float, default=None, help="MRAF background attenuation if bg-mode=attenuate.")
     parser.add_argument("--smoke-shape", type=int, default=None, help="Shape for random/zero smoke phase when no MAT is supplied.")
+    parser.add_argument("--skip-diagnostics", action="store_true", help="Do not run lightweight Python diagnostics after refinement.")
     return parser.parse_args()
 
 
@@ -315,6 +317,11 @@ def main() -> int:
     plot_profiles_compare(target, result.initial_intensity, result.reconstruction_intensity, masks, outdir, dpi=dpi)
     plot_convergence(result.metrics_history, outdir, dpi=dpi)
     write_report(outdir, cfg, phase_info, target, result)
+    if not args.skip_diagnostics:
+        diag_metrics, diag_outdir = run_case_diagnostics(outdir)
+        print(f"Python diagnostics output directory: {diag_outdir}")
+        print("Python diagnostics metrics:")
+        print(format_metrics(diag_metrics))
 
     print("Final metrics:")
     print(format_metrics(result.final_metrics))

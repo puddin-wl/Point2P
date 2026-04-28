@@ -177,6 +177,18 @@ is supplied. Saved files include:
 - `phase0.png`
 - `phase_refined.png`
 - `convergence_metrics.png`
+- `diagnostics_python/diagnostics_report.txt`
+- `diagnostics_python/diagnostics_metrics.csv`
+- `diagnostics_python/diagnostics_metrics.json`
+- `diagnostics_python/center_profiles_diagnostics.png`
+- `diagnostics_python/intensity_diagnostics.png`
+- `diagnostics_python/derivative_sidelobe_diagnostics.png`
+
+The lightweight Python diagnostics can also be run on an existing case:
+
+```powershell
+& 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_diagnostics_case.py "E:\program\Point2P\rtad_mraf_gs_python\artifacts\20260428-164830_rtad_mraf_gs"
+```
 
 ## First Recommended Parameters
 

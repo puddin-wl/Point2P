@@ -2,6 +2,7 @@
 
 __all__ = [
     "backend",
+    "diagnostics",
     "io_mat",
     "metrics",
     "mraf_gs",
