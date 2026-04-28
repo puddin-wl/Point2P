@@ -287,6 +287,109 @@ The lightweight Python diagnostics can also be run on an existing case:
 & 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_diagnostics_case.py "E:\program\Point2P\rtad_mraf_gs_python\artifacts\20260428-164830_rtad_mraf_gs"
 ```
 
+## Recent Trial Notes
+
+These notes summarize the parameter trials run on 2026-04-28. They are
+empirical observations for the current `phase0_wrapped_rad` case, not general
+proofs.
+
+Direct flat-local WGS, no MRAF warmup:
+
+```text
+method = wgs
+wgs_strategy = flat_local
+iters = 200
+mraf_factor = 0.4
+bg_factor = 0.05
+wgs_feedback_exponent = 0.3
+wgs_update_every = 5
+```
+
+This direct WGS mode produced the best flat-core uniformity so far. With
+`wgs_weight_min=0.5` and `wgs_weight_max=2.0`, the result reached about
+`uniformity_rms_percent = 96.19%` with `size50_x/y = 330.48 / 121.08 um`
+(`artifacts/20260428-221535_rtad_mraf_gs_truncI0135`). The `13.5%` size and
+efficiency changes were small enough for the current platform-focused search.
+
+WGS max sweep with direct WGS:
+
+```text
+wgs_weight_min = 0.5
+wgs_weight_max = 1.0, 1.5, 2.0, 2.5, 3.0
+```
+
+Artifacts:
+
+```text
+max=1.0: artifacts/20260428-225058_rtad_mraf_gs_truncI0135
+max=1.5: artifacts/20260428-225032_rtad_mraf_gs_truncI0135
+max=2.0: artifacts/20260428-221535_rtad_mraf_gs_truncI0135
+max=2.5: artifacts/20260428-224354_rtad_mraf_gs_truncI0135
+max=3.0: artifacts/20260428-224415_rtad_mraf_gs_truncI0135
+```
+
+Observed trend: `max=1.0` is too restrictive and does not repair the platform.
+Once `max > 1`, the x-direction center profile changes only mildly as max is
+increased. In y, the profile shape also changes modestly, while `size50_y`
+gradually grows and the shoulder becomes higher. For the current round we chose
+to fix `wgs_weight_max = 1.5` as the less aggressive platform-WGS setting.
+
+The combined center-profile figure is:
+
+```text
+artifacts/wgs_weight_max_summary/center_profiles_compare_wgs_weight_max_1p0_1p5_2p0_2p5_3p0.png
+```
+
+WGS min sweep with direct WGS and `max=1.5`:
+
+```text
+wgs_weight_max = 1.5
+wgs_weight_min = 0.5, 0.7, 0.8
+```
+
+Artifacts:
+
+```text
+min=0.5: artifacts/20260428-225032_rtad_mraf_gs_truncI0135
+min=0.7: artifacts/20260428-225817_rtad_mraf_gs_truncI0135
+min=0.8: artifacts/20260428-225843_rtad_mraf_gs_truncI0135
+```
+
+Observed trend: `wgs_weight_min` has almost no visible effect on the y direction
+for this case. `min=0.5` and `min=0.7` are nearly identical; `min=0.8` starts to
+limit the correction and slightly worsens flat uniformity. The current practical
+choice is to keep `wgs_weight_min = 0.5`.
+
+The combined center-profile figure is:
+
+```text
+artifacts/wgs_weight_min_summary/center_profiles_compare_wgs_weight_min_0p5_0p7_0p8_max1p5.png
+```
+
+Earlier MRAF/WGS trials:
+
+```text
+MRAF only, truncated RTAD release=exp(-2):
+  artifacts/20260428-173456_rtad_mraf_gs_truncI0135
+
+150 MRAF + 50 flat-local WGS:
+  artifacts/20260428-180526_rtad_mraf_gs_mrafwgs_truncI0135
+  uniformity improved from about 80.51% after MRAF to about 93.71%.
+
+150 MRAF + 20 XY-WGS + 30 X-only:
+  artifacts/20260428-183223_rtad_mraf_gs_mrafwgs_xyx_truncI0135
+  froze y too early; y size/profile was worse than the 50-step flat-local WGS.
+
+150 MRAF + 40 XY-WGS + 10 X-only:
+  artifacts/20260428-215516_rtad_mraf_gs_mrafwgs_xyx_truncI0135
+  recovered most of y while keeping a small x-only correction.
+
+150 MRAF + 50 XY-WGS + 20 X-only:
+  artifacts/20260428-215858_rtad_mraf_gs_mrafwgs_xyx_truncI0135
+  gave better x profile and high uniformity, but the current focus shifted back
+  to simpler direct flat-local WGS without x-only correction.
+```
+
 ## First Recommended Parameters
 
 ```text

@@ -80,3 +80,39 @@ run_diagnostics_example
 
 This computes center profiles, 90%/50%/13.5% sizes, transition width, RMS/PV, shoulder, and side-lobe metrics for an initial-phase focal-plane result.
 
+## RTAD MRAF/GS Python Trial Notes
+
+The independent Python RTAD + MRAF/GS/WGS program lives in:
+
+```text
+E:\program\Point2P\rtad_mraf_gs_python
+```
+
+Detailed implementation notes and trial logs are in:
+
+```text
+rtad_mraf_gs_python\README.md
+```
+
+Recent WGS observations from the current `phase0_wrapped_rad` case:
+
+- Direct flat-local WGS without an MRAF warmup gave the best platform
+  uniformity so far.
+- With direct WGS and `wgs_weight_max > 1`, the x-direction center profile
+  changed only mildly as `wgs_weight_max` was increased. `max=1.0` was too
+  restrictive, but `max=1.5`, `2.0`, `2.5`, and `3.0` were broadly similar in
+  x. The current practical setting is `wgs_weight_max = 1.5`.
+- In y, changing `wgs_weight_max` also did not radically change the center
+  profile shape, but `size50_y` gradually increased and the shoulder became
+  higher as max was increased.
+- With `wgs_weight_max = 1.5`, changing `wgs_weight_min` from `0.5` to `0.7`
+  and `0.8` had almost no useful effect on y. `min=0.8` began to limit the
+  correction and slightly worsened flat uniformity. Keep `wgs_weight_min = 0.5`
+  for now.
+
+Summary figures:
+
+```text
+rtad_mraf_gs_python\artifacts\wgs_weight_max_summary\center_profiles_compare_wgs_weight_max_1p0_1p5_2p0_2p5_3p0.png
+rtad_mraf_gs_python\artifacts\wgs_weight_min_summary\center_profiles_compare_wgs_weight_min_0p5_0p7_0p8_max1p5.png
+```
