@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function summary_root = run_mraf_transition_probe()
 % run_mraf_transition_probe Conservative gamma-only probe around caseC_iter10_baseline.
 close all; clc;
@@ -174,3 +178,4 @@ ax = nexttile(2); grid(ax, 'on'); xlim(ax, [-220 220]); ylim(ax, [0 1.35]); ylin
 sgtitle('Transition probe profile overlay: check shoulder before accepting narrower transition');
 exportgraphics(fig, path, 'Resolution', 150); close(fig);
 end
+

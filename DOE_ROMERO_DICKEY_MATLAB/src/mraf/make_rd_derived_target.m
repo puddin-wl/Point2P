@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function target = make_rd_derived_target(focal_x_m, focal_y_m, I_rd, cfg)
 % make_rd_derived_target Create a smooth RD-derived amplitude target.
 
@@ -176,3 +180,4 @@ target.hard_rectangle_half_y_m = cfg.target_half_y_m;
 target.hard_rectangle_size_x_um = cfg.target_size_x_m * 1e6;
 target.hard_rectangle_size_y_um = cfg.target_size_y_m * 1e6;
 end
+

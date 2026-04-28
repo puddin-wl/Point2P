@@ -1,4 +1,8 @@
-﻿function summary_root = run_mraf_wgs_probe()
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
+function summary_root = run_mraf_wgs_probe()
 % run_mraf_wgs_probe Conservative WGS test on current pivot50_p075/q125 candidate.
 close all; clc;
 project_root = fileparts(mfilename('fullpath'));

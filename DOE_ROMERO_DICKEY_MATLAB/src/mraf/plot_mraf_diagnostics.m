@@ -10,12 +10,30 @@ if strcmpi(string(target.mode), "hard_rectangle")
     save_focal(cfg, focal_x_m, focal_y_m, target.intensity_plot, [], 'target_masks', 'hard_rectangle_target_intensity.png', false);
     save_mask(cfg, target.masks.signal, 'target_masks', 'hard_rectangle_signal_mask.png', 'hard rectangle signal mask');
     save_mask(cfg, target.masks.free, 'target_masks', 'hard_rectangle_free_mask.png', 'hard rectangle free mask');
+elseif strcmpi(string(target.mode), "rect_e2_spec_scaled")
+    save_focal(cfg, focal_x_m, focal_y_m, target.amplitude, [], 'target_masks', 'rect_e2_spec_scaled_target_amplitude.png', false);
+    save_focal(cfg, focal_x_m, focal_y_m, target.intensity_plot, [], 'target_masks', 'rect_e2_spec_scaled_target_intensity.png', false);
+    save_mask(cfg, target.masks.plateau, 'target_masks', 'plateau_mask.png', '90% plateau mask');
+    save_mask(cfg, target.masks.transition, 'target_masks', 'transition_mask.png', '13.5%-90% transition mask');
+    save_mask(cfg, target.masks.transition_90_50, 'target_masks', 'transition_90_50_mask.png', '90%-50% transition mask');
+    save_mask(cfg, target.masks.transition_50_135, 'target_masks', 'transition_50_135_mask.png', '50%-13.5% transition mask');
+    save_mask(cfg, target.masks.outside_e2, 'target_masks', 'outside_e2_mask.png', 'outside 13.5% dont-care mask');
+elseif strcmpi(string(target.mode), "slmsuite_like_mraf")
+    save_focal(cfg, focal_x_m, focal_y_m, target.amplitude, [], 'target_masks', 'slmsuite_like_target_amplitude.png', false);
+    save_focal(cfg, focal_x_m, focal_y_m, target.intensity_plot, [], 'target_masks', 'slmsuite_like_target_intensity.png', false);
+    save_mask(cfg, target.masks.signal, 'target_masks', 'slmsuite_signal_mask.png', 'slmsuite signal mask');
+    save_mask(cfg, target.masks.noise, 'target_masks', 'slmsuite_noise_mask.png', 'slmsuite MRAF noise mask');
+    save_mask(cfg, target.masks.null, 'target_masks', 'slmsuite_null_mask.png', 'slmsuite null mask');
+    save_slmsuite_mask_map(cfg, target, 'target_masks', 'slmsuite_mask_map.png');
 else
     save_focal(cfg, focal_x_m, focal_y_m, target.amplitude, [], 'target_masks', 'rd_derived_target_amplitude.png', false);
     save_focal(cfg, focal_x_m, focal_y_m, target.intensity_plot, [], 'target_masks', 'rd_derived_target_intensity.png', false);
 end
 save_focal(cfg, focal_x_m, focal_y_m, target.blend_map, [], 'target_masks', 'blend_map.png', false);
 save_mask(cfg, target.masks.core, 'target_masks', 'core_mask.png', 'core mask');
+if isfield(target.masks, 'flat_core')
+    save_mask(cfg, target.masks.flat_core, 'target_masks', 'flat_core_mask.png', 'flat core mask');
+end
 save_mask(cfg, target.masks.signal, 'target_masks', 'signal_mask.png', 'signal mask');
 save_mask(cfg, target.masks.edge, 'target_masks', 'edge_mask.png', 'edge mask');
 save_mask(cfg, target.masks.noise, 'target_masks', 'noise_mask.png', 'noise/free mask');
@@ -26,6 +44,18 @@ end
 if isfield(target.masks, 'free_noise')
     save_mask(cfg, target.masks.free_noise, 'target_masks', 'free_noise_mask.png', 'three-region free/noise mask');
 end
+if isfield(target.masks, 'free_edge')
+    save_mask(cfg, target.masks.free_edge, 'target_masks', 'free_edge_mask.png', 'free edge / side-lobe reservoir mask');
+end
+if isfield(target.masks, 'shoulder_guard')
+    save_mask(cfg, target.masks.shoulder_guard, 'target_masks', 'shoulder_guard_mask.png', 'shoulder guard mask');
+end
+if isfield(target.masks, 'lobe_reservoir')
+    save_mask(cfg, target.masks.lobe_reservoir, 'target_masks', 'lobe_reservoir_mask.png', 'lobe reservoir mask');
+end
+if isfield(target.masks, 'guard_cap_intensity')
+    save_focal(cfg, focal_x_m, focal_y_m, target.masks.guard_cap_intensity, [], 'target_masks', 'shoulder_guard_cap_intensity.png', false);
+end
 if isfield(target.masks, 'outer_suppress')
     save_mask(cfg, target.masks.outer_suppress, 'target_masks', 'outer_suppress_mask.png', 'three-region outer suppress mask');
 end
@@ -35,7 +65,9 @@ end
 if isfield(target.masks, 'wgs_y_edge_damping_band')
     save_mask(cfg, target.masks.wgs_y_edge_damping_band, 'target_masks', 'wgs_y_edge_damping_band.png', 'WGS y edge damping band');
 end
-save_remap_curve(cfg, target, 'target_masks', 'pivot50_remap_curve.png');
+if isfield(target, 'remap_curve_x') && isfield(target, 'remap_curve_y')
+    save_remap_curve(cfg, target, 'target_masks', 'pivot50_remap_curve.png');
+end
 
 save_focal(cfg, focal_x_m, focal_y_m, rd.intensity_norm, rd.metrics, 'ideal_fft', 'focal_rd_intensity.png', false);
 save_focal(cfg, focal_x_m, focal_y_m, mraf.intensity_norm, mraf.metrics, 'ideal_fft', 'focal_mraf_intensity.png', false);
@@ -69,6 +101,20 @@ function save_image(cfg, data, folder_key, filename, title_text, cmap)
 if nargin < 6, cmap = 'turbo'; end
 fig = figure('Visible', 'off', 'Color', 'w');
 imagesc(data); axis image off; colormap(gca, cmap); colorbar; title(title_text, 'Interpreter', 'none');
+exportgraphics(fig, out_path(cfg, folder_key, filename), 'Resolution', cfg.figure_dpi);
+close(fig);
+end
+
+function save_slmsuite_mask_map(cfg, target, folder_key, filename)
+mask_map = zeros(size(target.amplitude));
+mask_map(target.masks.signal) = 1;
+mask_map(target.masks.noise) = 2;
+mask_map(target.masks.null) = 3;
+fig = figure('Visible', 'off', 'Color', 'w');
+imagesc(mask_map); axis image off;
+colormap(gca, [0 0.55 0; 1 0.75 0; 0.15 0.15 0.15]);
+colorbar('Ticks', [1 2 3], 'TickLabels', {'signal','noise','null'});
+title('slmsuite-like MRAF mask map', 'Interpreter', 'none');
 exportgraphics(fig, out_path(cfg, folder_key, filename), 'Resolution', cfg.figure_dpi);
 close(fig);
 end

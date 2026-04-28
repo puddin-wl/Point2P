@@ -1,4 +1,8 @@
-﻿function summary_root = run_mraf_wgs_yscale_fine_probe()
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
+function summary_root = run_mraf_wgs_yscale_fine_probe()
 % run_mraf_wgs_yscale_fine_probe Fine y-scale check around target_y_scale ~= 1.02.
 close all; clc;
 project_root = fileparts(mfilename('fullpath'));
@@ -50,3 +54,4 @@ for i=1:height(t)
 end
 fprintf('\nWGS y-scale fine summary written to:\n%s\n', summary_root);
 end
+

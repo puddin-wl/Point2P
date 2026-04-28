@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function summary_root = run_mraf_pivot50_extend_probe()
 % run_mraf_pivot50_extend_probe Extend pivot50 strength beyond p090/q110 conservatively.
 close all; clc;

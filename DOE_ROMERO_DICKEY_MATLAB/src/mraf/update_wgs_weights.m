@@ -1,16 +1,16 @@
-function weights = update_wgs_weights(weights, A_target, Af, finite_mask, cfg, update_scale)
-% update_wgs_weights Conservative WGS amplitude weights on finite target pixels.
-if nargin < 6 || isempty(update_scale)
-    update_scale = ones(size(Af));
-end
-ratio = ones(size(Af));
-ratio(finite_mask) = A_target(finite_mask) ./ max(Af(finite_mask), eps);
-ratio(~isfinite(ratio)) = 1;
-local_exponent = cfg.mraf.wgs_exponent .* update_scale;
-weights(finite_mask) = weights(finite_mask) .* ratio(finite_mask) .^ local_exponent(finite_mask);
-mean_weight = mean(weights(finite_mask), 'omitnan');
+﻿function weights = update_wgs_weights(weights, A_target, Af, finite_mask, cfg)
+% update_wgs_weights Update WGS weights only on the finite flat-core target.
+core_amp = Af(finite_mask);
+mean_amp = mean(core_amp(:), 'omitnan') + eps;
+ratio = mean_amp ./ (core_amp + eps);
+core_weights = weights(finite_mask);
+core_weights(~isfinite(core_weights)) = 1;
+core_weights = core_weights .* ratio .^ cfg.mraf.wgs_exponent;
+core_weights = min(max(core_weights, 0.5), 2.0);
+mean_weight = mean(core_weights(:), 'omitnan');
 if isfinite(mean_weight) && mean_weight > 0
-    weights(finite_mask) = weights(finite_mask) ./ mean_weight;
+    core_weights = core_weights ./ mean_weight;
 end
-weights = min(max(weights, 0.1), 10);
+weights(finite_mask) = core_weights;
+weights(~finite_mask) = NaN;
 end

@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function summary_root = run_mraf_pivot50_probe()
 % run_mraf_pivot50_probe Probe pivot50 edge remap around fixed caseC settings.
 close all; clc;

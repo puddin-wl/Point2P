@@ -1,4 +1,8 @@
-﻿function [cfg, result, fullprop] = run_mraf_three_region_target_one()
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
+function [cfg, result, fullprop] = run_mraf_three_region_target_one()
 % run_mraf_three_region_target_one Run one true three-region MRAF case.
 close all; clc;
 project_root = fileparts(mfilename('fullpath'));
@@ -52,3 +56,4 @@ fprintf('FULL  size50 %.3f x %.3f um; shoulder %.6g x %.6g; core_rms %.6g; true_
     fm.size50_x_um, fm.size50_y_um, fm.shoulder_peak_x, fm.shoulder_peak_y, fm.core_rms, ...
     fm.true_side_lobe_peak_x_rel_to_core, fm.true_side_lobe_peak_y_rel_to_core, fm.has_true_side_lobe_x, fm.has_true_side_lobe_y);
 end
+

@@ -1,4 +1,8 @@
-﻿function summary_root = run_mraf_wgs_yscale_probe()
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
+function summary_root = run_mraf_wgs_yscale_probe()
 % run_mraf_wgs_yscale_probe Tiny y-geometry calibration on the good WGS exp020 case.
 close all; clc;
 project_root = fileparts(mfilename('fullpath'));
@@ -137,3 +141,4 @@ end
 function format_axis(ax,tit,xlab,xlims)
 grid(ax,'on'); xlim(ax,xlims); ylim(ax,[0 1.35]); yline(ax,0.90,'g:'); yline(ax,0.50,'r:'); yline(ax,0.135,'m:'); title(ax,tit); xlabel(ax,xlab); ylabel(ax,'normalized intensity'); legend(ax,'Location','northeastoutside');
 end
+

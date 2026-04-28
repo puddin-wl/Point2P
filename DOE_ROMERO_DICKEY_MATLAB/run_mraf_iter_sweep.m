@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function summary_root = run_mraf_iter_sweep()
 % run_mraf_iter_sweep Small single-variable n_iter sweep for caseC_stable.
 close all; clc;

@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function summary_root = run_mraf_pivot50_phaseblend_probe()
 % run_mraf_pivot50_phaseblend_probe Micro-scan phase_blend around pivot50_p090_q110.
 close all; clc;

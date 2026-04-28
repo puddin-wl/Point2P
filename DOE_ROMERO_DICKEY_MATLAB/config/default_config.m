@@ -63,14 +63,38 @@ cfg.figure_dpi = 150;
 
 cfg.mraf = struct();
 cfg.mraf.enable = true;
-cfg.mraf.target_mode = "rd_derived";
-cfg.mraf.n_iter = 10;
-cfg.mraf.method = "GS-MRAF";
+cfg.mraf.enabled = true;
+cfg.mraf.target_mode = "flat_core_free_edge";
+cfg.mraf.n_iter = 20;
+cfg.mraf.method = "WGS-MRAF";
 cfg.mraf.mraf_factor = 1.0;
-cfg.mraf.use_three_region_projection = false;
+cfg.mraf.use_three_region_projection = true;
 cfg.mraf.free_factor = 1.0;
-cfg.mraf.outer_factor = 0.3;
-cfg.mraf.phase_blend = 0.25;
+cfg.mraf.outer_factor = 0.5;
+cfg.mraf.transition_cap_blend = 0.35;
+cfg.mraf.phase_blend = 0.20;
+cfg.mraf.use_wgs = true;
+cfg.mraf.wgs_exponent = 0.10;
+cfg.mraf.flat_fraction_x = 0.80;
+cfg.mraf.flat_fraction_y = 0.80;
+cfg.mraf.free_fraction_x = 1.35;
+cfg.mraf.free_fraction_y = 1.50;
+cfg.mraf.guard_fraction_x = 1.02;
+cfg.mraf.guard_fraction_y = 1.04;
+cfg.mraf.lobe_fraction_x = 1.25;
+cfg.mraf.lobe_fraction_y = 1.35;
+cfg.mraf.guard_cap_outer_intensity = 0.12;
+cfg.mraf.guard_blend = 0.35;
+cfg.mraf.output_dir = fullfile(project_root, "artifacts", "mraf_flat_core_free_edge");
+cfg.mraf.save_every = 1;
+cfg.mraf.normalization = "flat_core_mean";
+cfg.mraf.preset_name = "flat_core_free_edge";
+cfg.mraf.variant_name = "flat_core_caseA_baseline";
+cfg.mraf.artifact_group = "flat_core_free_edge_mraf";
+
+% LEGACY: Parameters below are kept only so older comparison scripts can run.
+% The recommended workflow is run_flat_core_free_edge_mraf.m and does not use
+% RD-derived gamma/pivot/sigmoid target remapping or free-threshold sweeps.
 cfg.mraf.rd_target_gamma = 1.0;
 cfg.mraf.rd_target_sigmoid_k = 8;
 cfg.mraf.rd_target_sigmoid_t = 0.5;
@@ -85,7 +109,6 @@ cfg.mraf.signal_threshold = 0.50;
 cfg.mraf.edge_low_threshold = 0.10;
 cfg.mraf.noise_threshold = 0.05;
 cfg.mraf.free_threshold = 0.05;
-cfg.mraf.wgs_exponent = 0;
 cfg.mraf.y_free_reservoir_enable = false;
 cfg.mraf.y_free_reservoir_half_y_um = 72;
 cfg.mraf.y_free_reservoir_max_intensity = 0.50;
@@ -93,14 +116,8 @@ cfg.mraf.wgs_y_edge_damping_enable = false;
 cfg.mraf.wgs_y_edge_damping_factor = 0.50;
 cfg.mraf.wgs_y_edge_damping_low = 0.50;
 cfg.mraf.wgs_y_edge_damping_high = 0.90;
-cfg.mraf.save_every = 1;
-cfg.mraf.normalization = "core_mean";
 cfg.mraf.flat_low = 0.75;
 cfg.mraf.flat_high = 0.95;
-cfg.mraf.preset_name = "caseC_stable";
-cfg.mraf.use_wgs = false;
-cfg.mraf.variant_name = "caseC_iter10_baseline";
-cfg.mraf.artifact_group = "single_runs";
 
 
 stamp = string(datetime('now', 'Format', 'yyyyMMdd-HHmmss'));

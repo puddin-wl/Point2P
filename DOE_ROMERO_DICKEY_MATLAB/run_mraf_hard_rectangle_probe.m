@@ -1,3 +1,7 @@
+﻿% LEGACY:
+% This script/function is kept for comparison only.
+% The recommended main workflow is run_flat_core_free_edge_mraf.m.
+
 function summary_root = run_mraf_hard_rectangle_probe()
 % run_mraf_hard_rectangle_probe Hard-rectangle signal + MRAF free-region control experiment.
 close all; clc;

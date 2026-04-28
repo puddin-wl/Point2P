@@ -1,7 +1,21 @@
-﻿function metrics = compute_mraf_metrics(focal_x_m, focal_y_m, intensity_raw, masks, input_power, cfg)
+function metrics = compute_mraf_metrics(focal_x_m, focal_y_m, intensity_raw, masks, input_power, cfg)
 % compute_mraf_metrics Metrics normalized by core mean for RD/MRAF comparison.
 intensity_raw = double(intensity_raw);
 intensity_raw(~isfinite(intensity_raw)) = 0;
+if ~isfield(masks, 'flat_core'), masks.flat_core = masks.core; end
+if ~isfield(masks, 'free_edge')
+    if isfield(masks, 'free'), masks.free_edge = masks.free; else, masks.free_edge = false(size(intensity_raw)); end
+end
+if ~isfield(masks, 'outer_suppress'), masks.outer_suppress = false(size(intensity_raw)); end
+if ~isfield(masks, 'shoulder_guard'), masks.shoulder_guard = false(size(intensity_raw)); end
+if ~isfield(masks, 'lobe_reservoir'), masks.lobe_reservoir = masks.free_edge; end
+if ~isfield(masks, 'transition'), masks.transition = masks.free_edge; end
+if ~isfield(masks, 'transition_90_50'), masks.transition_90_50 = false(size(intensity_raw)); end
+if ~isfield(masks, 'transition_50_135'), masks.transition_50_135 = false(size(intensity_raw)); end
+if ~isfield(masks, 'outside_e2'), masks.outside_e2 = masks.outer_suppress; end
+if ~isfield(masks, 'plateau'), masks.plateau = masks.flat_core; end
+if ~isfield(masks, 'null'), masks.null = masks.outer_suppress; end
+if ~isfield(masks, 'noise_box'), masks.noise_box = masks.guard; end
 total_power_raw = sum(intensity_raw, 'all');
 core_values_raw = intensity_raw(masks.core);
 core_mean_raw = mean(core_values_raw, 'omitnan');
@@ -33,8 +47,16 @@ metrics.size_50_x_um = metrics.size50_x_um;
 metrics.size_50_y_um = metrics.size50_y_um;
 metrics.size13p5_x_um = pair_width_um(x13p5);
 metrics.size13p5_y_um = pair_width_um(y13p5);
+metrics.measured_size90_x_um = pair_width_um(x90);
+metrics.measured_size90_y_um = pair_width_um(y90);
+metrics.measured_size50_x_um = metrics.size50_x_um;
+metrics.measured_size50_y_um = metrics.size50_y_um;
+metrics.measured_size135_x_um = metrics.size13p5_x_um;
+metrics.measured_size135_y_um = metrics.size13p5_y_um;
 metrics.transition_13p5_90_x_um = x_tw;
 metrics.transition_13p5_90_y_um = y_tw;
+metrics.transition_width_135_90_x_um = x_tw;
+metrics.transition_width_135_90_y_um = y_tw;
 metrics.transition_13p5_90_x_left_um = x_tw_left;
 metrics.transition_13p5_90_x_right_um = x_tw_right;
 metrics.transition_13p5_90_y_left_um = y_tw_left;
@@ -43,6 +65,8 @@ metrics.transition_width_13_90_x_um = transition_width(focal_x_m, x_profile, 0.1
 metrics.transition_width_13_90_y_um = transition_width(focal_y_m, y_profile, 0.13, 0.90, cfg.target_half_y_m) * 1e6;
 metrics.transition_width_10_90_x_um = transition_width(focal_x_m, x_profile, 0.10, 0.90, cfg.target_half_x_m) * 1e6;
 metrics.transition_width_10_90_y_um = transition_width(focal_y_m, y_profile, 0.10, 0.90, cfg.target_half_y_m) * 1e6;
+metrics.transition_width_x_um = metrics.transition_13p5_90_x_um;
+metrics.transition_width_y_um = metrics.transition_13p5_90_y_um;
 metrics.crossing50_x_left_um = x50.left * 1e6;
 metrics.crossing50_x_right_um = x50.right * 1e6;
 metrics.crossing50_y_left_um = y50.left * 1e6;
@@ -56,6 +80,32 @@ metrics.crossing90_x_right_um = x90.right * 1e6;
 metrics.crossing90_y_left_um = y90.left * 1e6;
 metrics.crossing90_y_right_um = y90.right * 1e6;
 metrics.has_crossing_warning = any(isnan([metrics.size50_x_um, metrics.size50_y_um, metrics.size13p5_x_um, metrics.size13p5_y_um, metrics.transition_13p5_90_x_um, metrics.transition_13p5_90_y_um]));
+flat_values_raw = intensity_raw(masks.flat_core);
+flat_core_mean_raw = mean(flat_values_raw, 'omitnan');
+flat_values = I(masks.flat_core);
+flat_core_mean = mean(flat_values, 'omitnan');
+flat_norm = flat_values ./ max(flat_core_mean, eps);
+metrics.flat_core_mean = flat_core_mean_raw;
+metrics.flat_core_rms = sqrt(mean((flat_norm - 1).^2, 'omitnan'));
+metrics.flat_core_pv = max(flat_norm) - min(flat_norm);
+metrics.flat_core_uniformity = 1 - metrics.flat_core_pv;
+metrics.signal_rms = metrics.flat_core_rms;
+metrics.signal_pv = metrics.flat_core_pv;
+flat_total = sum(I(masks.flat_core), 'all');
+metrics.side_lobe_energy_ratio = sum(I(masks.free_edge), 'all') / max(flat_total, eps);
+metrics.outer_energy_ratio = sum(I(masks.outer_suppress), 'all') / max(flat_total, eps);
+metrics.noise_energy_ratio = sum(intensity_raw(masks.noise), 'all') / max(sum(intensity_raw(masks.signal), 'all'), eps);
+metrics.null_energy_ratio = sum(intensity_raw(masks.null), 'all') / max(sum(intensity_raw(masks.signal), 'all'), eps);
+metrics.e2_efficiency = sum(intensity_raw(masks.noise_box), 'all') / max(total_power_raw, eps);
+metrics.shoulder_peak = max(I(masks.shoulder_guard), [], 'all', 'omitnan');
+if isempty(metrics.shoulder_peak) || ~isfinite(metrics.shoulder_peak), metrics.shoulder_peak = 0; end
+if isfield(masks, 'null') && any(masks.noise, 'all')
+    metrics.shoulder_peak = max(I(masks.noise), [], 'all', 'omitnan');
+end
+metrics.shoulder_energy_ratio = sum(intensity_raw(masks.shoulder_guard), 'all') / max(sum(intensity_raw(masks.flat_core), 'all'), eps);
+metrics.lobe_peak = max(I(masks.lobe_reservoir), [], 'all', 'omitnan');
+if isempty(metrics.lobe_peak) || ~isfinite(metrics.lobe_peak), metrics.lobe_peak = 0; end
+metrics.lobe_energy_ratio = sum(intensity_raw(masks.lobe_reservoir), 'all') / max(sum(intensity_raw(masks.flat_core), 'all'), eps);
 metrics.core_rms = sqrt(mean((core_values ./ max(core_mean, eps) - 1).^2, 'omitnan'));
 roi90 = masks.core & I >= 0.90;
 if nnz(roi90) < 4
@@ -64,6 +114,14 @@ end
 values90 = I(roi90);
 mean90 = mean(values90, 'omitnan');
 metrics.rms_90 = sqrt(mean((values90 ./ max(mean90, eps) - 1).^2, 'omitnan'));
+plateau_values = I(masks.plateau);
+plateau_mean = mean(plateau_values, 'omitnan');
+metrics.rms_uniformity_90_region = sqrt(mean((plateau_values ./ max(plateau_mean, eps) - 1).^2, 'omitnan'));
+metrics.e2_diffraction_efficiency = sum(intensity_raw(~masks.outside_e2), 'all') / max(total_power_raw, eps);
+metrics.shoulder_peak_90_50 = max(I(masks.transition_90_50), [], 'all', 'omitnan');
+if isempty(metrics.shoulder_peak_90_50) || ~isfinite(metrics.shoulder_peak_90_50), metrics.shoulder_peak_90_50 = NaN; end
+metrics.shoulder_peak_50_135 = max(I(masks.transition_50_135), [], 'all', 'omitnan');
+if isempty(metrics.shoulder_peak_50_135) || ~isfinite(metrics.shoulder_peak_50_135), metrics.shoulder_peak_50_135 = NaN; end
 metrics.peak_to_valley = (max(core_values) - min(core_values)) / max(core_mean, eps);
 half50_x_m = metrics.size50_x_um * 1e-6 / 2;
 half50_y_m = metrics.size50_y_um * 1e-6 / 2;
