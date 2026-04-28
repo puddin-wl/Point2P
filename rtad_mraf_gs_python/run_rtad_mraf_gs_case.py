@@ -46,6 +46,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--use-cupy", dest="use_cupy", action="store_true", default=None, help="Use CuPy if available.")
     parser.add_argument("--no-cupy", dest="use_cupy", action="store_false", help="Force NumPy CPU.")
     parser.add_argument("--transpose-h5", action="store_true", help="Transpose HDF5 MAT arrays after reading.")
+    parser.add_argument("--swap-phase-xy", dest="swap_phase_xy", action="store_true", default=None, help="Transpose the imported phase0 matrix to swap x/y axes.")
+    parser.add_argument("--no-swap-phase-xy", dest="swap_phase_xy", action="store_false", help="Do not swap x/y axes on the imported phase0 matrix.")
     parser.add_argument("--metrics-interval", type=int, default=None, help="Metrics logging interval.")
     parser.add_argument("--wgs-after-iters", type=int, default=None, help="Iteration at which WGS updates begin.")
     parser.add_argument("--feedback-exponent", type=float, default=None, help="WGS feedback exponent.")
@@ -64,6 +66,8 @@ def apply_overrides(config: dict, args: argparse.Namespace) -> dict:
         cfg["paths"]["phase_var"] = args.phase_var
     if args.transpose_h5:
         cfg["paths"]["transpose_h5"] = True
+    if args.swap_phase_xy is not None:
+        cfg["paths"]["swap_phase_xy"] = bool(args.swap_phase_xy)
     if args.iters is not None:
         cfg["refinement"]["num_iters"] = args.iters
     if args.method is not None:
@@ -96,9 +100,15 @@ def load_or_make_phase(cfg: dict) -> tuple[np.ndarray, dict, np.ndarray | None, 
     phase_mat = cfg["paths"]["phase_mat"]
     phase_var = cfg["paths"]["phase_var"]
     transpose_h5 = bool(cfg["paths"].get("transpose_h5", False))
+    swap_phase_xy = bool(cfg["paths"].get("swap_phase_xy", False))
 
     if phase_mat:
-        phase, info = load_phase_mat(phase_mat, phase_var=phase_var, transpose_h5=transpose_h5)
+        phase, info = load_phase_mat(
+            phase_mat,
+            phase_var=phase_var,
+            transpose_h5=transpose_h5,
+            swap_xy=swap_phase_xy,
+        )
         focal_x_m, _ = load_optional_mat_variable(phase_mat, "focal_x_m", transpose_h5=transpose_h5, squeeze=True)
         focal_y_m, _ = load_optional_mat_variable(phase_mat, "focal_y_m", transpose_h5=transpose_h5, squeeze=True)
         x_um = np.asarray(focal_x_m, dtype=np.float64).reshape(-1) * 1e6 if focal_x_m is not None else None

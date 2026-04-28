@@ -42,6 +42,7 @@ CONFIG = {
         "phase_var": "phase0",
         "out_root": "artifacts",
         "transpose_h5": False,
+        "swap_phase_xy": True,
     },
     "runtime": {
         "use_cupy": True,

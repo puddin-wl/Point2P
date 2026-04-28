@@ -131,6 +131,11 @@ cd E:\program\Point2P\rtad_mraf_gs_python
 & 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --iters 200 --method mraf --mraf-factor 0.4
 ```
 
+By default this program applies `swap_phase_xy = True` to imported `phase0`
+files, because the current MATLAB v7.3 `phase0` orientation appears x/y swapped
+when read into Python. Use `--no-swap-phase-xy` only if a future input file has
+already been corrected.
+
 Smoke test without a phase file:
 
 ```powershell
@@ -148,6 +153,7 @@ Useful overrides:
 - `--delta-y`
 - `--outdir`
 - `--use-cupy` / `--no-cupy`
+- `--swap-phase-xy` / `--no-swap-phase-xy`
 
 ## Outputs
 

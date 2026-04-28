@@ -98,17 +98,25 @@ def load_phase_mat(
     path: str | Path,
     phase_var: str = "phase0",
     transpose_h5: bool = False,
+    swap_xy: bool = False,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Load a phase matrix in radians and wrap it to ``[0, 2*pi)``.
 
     The function first tries ``scipy.io.loadmat`` for MATLAB v7 and older
     files. If that fails, it reads MATLAB v7.3 HDF5 files with ``h5py``.
+    Set ``swap_xy=True`` when a MATLAB phase matrix is observed to have x/y
+    axes swapped after import; this applies a 2D transpose to the phase only.
     """
     phase, info = load_mat_variable(path, phase_var, transpose_h5=transpose_h5, squeeze=False)
     if phase.ndim != 2:
         raise ValueError(f"Phase variable '{phase_var}' must be 2D; got shape {phase.shape}.")
     if not np.issubdtype(phase.dtype, np.number):
         raise TypeError(f"Phase variable '{phase_var}' must be numeric; got dtype {phase.dtype}.")
+
+    info["shape_before_phase_xy_swap"] = tuple(int(v) for v in phase.shape)
+    info["phase_xy_swapped"] = bool(swap_xy)
+    if swap_xy:
+        phase = phase.T
 
     phase = np.mod(np.asarray(phase, dtype=np.float32), np.float32(2.0 * np.pi))
     nonfinite = ~np.isfinite(phase)
