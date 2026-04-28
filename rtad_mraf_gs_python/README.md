@@ -155,6 +155,32 @@ WGS does not update `mask_edge_lock`, `mask_free`, or `mask_bg_far`. It is only
 a flat-core uniformity feedback; it does not use size50, e^-2 efficiency, or
 diagnostics-side metrics as constraints.
 
+Two WGS strategies are available:
+
+```text
+flat_local:
+  Run all WGS iterations with the 2D local flat-core update above.
+
+xy_then_x:
+  Run WGS-XY first with the same 2D local flat-core update.
+  Then freeze that y-local structure and update a separate 1D x weight:
+
+    amp_x[j] = mean(abs(E_far)[mask_flat[:, j]])
+    amp_x_mean = mean(amp_x over valid flat-core x columns)
+    w_x[j] *= (amp_x_mean / (amp_x[j] + eps))^wgs_x_feedback_exponent
+    w_x = clip(w_x, wgs_x_weight_min, wgs_x_weight_max)
+    w_x /= mean(w_x)
+
+  During x-only projection:
+    target_amp_eff[mask_flat] =
+      target_amp[mask_flat] * weights_2d[mask_flat] * w_x_broadcast[mask_flat]
+```
+
+`xy_then_x` is meant to avoid continuing to push the y direction after the
+flat core has become reasonably uniform. The second stage mainly changes the x
+profile because the x weight is broadcast along y and is used only inside
+`mask_flat`.
+
 ## How To Run
 
 From this folder:
@@ -170,10 +196,10 @@ Equivalent explicit truncated-target run:
 & 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --iters 200 --method mraf --mraf-factor 0.4 --constraint-mode truncated_rtad --release-level 0.1353352832366127 --bg-factor 0.05
 ```
 
-Recommended MRAF followed by flat-core WGS:
+Recommended MRAF followed by XY then x-only WGS:
 
 ```powershell
-& 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --method mraf_then_wgs --mraf-iters 150 --wgs-iters 50 --mraf-factor 0.4 --wgs-feedback-exponent 0.3 --wgs-update-every 5 --release-level 0.1353352832366127 --bg-factor 0.05
+& 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_rtad_mraf_gs_case.py --phase-mat "E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat" --phase-var phase0_wrapped_rad --method mraf_then_wgs --mraf-iters 150 --wgs-strategy xy_then_x --wgs-xy-iters 20 --wgs-xonly-iters 30 --mraf-factor 0.4 --wgs-xy-feedback-exponent 0.3 --wgs-x-feedback-exponent 0.45 --release-level 0.1353352832366127 --bg-factor 0.05
 ```
 
 By default this program applies `swap_phase_xy = True` to imported `phase0`
@@ -199,6 +225,13 @@ Useful overrides:
 - `--delta-x`
 - `--delta-y`
 - `--bg-factor`
+- `--wgs-strategy`
+- `--wgs-xy-iters`
+- `--wgs-xonly-iters`
+- `--wgs-xy-feedback-exponent`
+- `--wgs-x-feedback-exponent`
+- `--wgs-x-weight-min`
+- `--wgs-x-weight-max`
 - `--outdir`
 - `--use-cupy` / `--no-cupy`
 - `--swap-phase-xy` / `--no-swap-phase-xy`
@@ -214,9 +247,13 @@ is supplied. Saved files include:
 - `phase_refined.mat`
 - `phase_refined.npy`
 - `phase_after_mraf.npy`
+- `phase_after_wgs_xy.npy`
 - `reconstruction_refined.npy`
 - `reconstruction_after_mraf.npy`
+- `reconstruction_after_wgs_xy.npy`
 - `wgs_weights_final.npy`
+- `wgs_weights_2d_final.npy`
+- `wgs_x_weights_final.npy`
 - `metrics.csv`
 - `report.txt`
 - `target_full_intensity.png`
@@ -229,8 +266,11 @@ is supplied. Saved files include:
 - `refined_reconstruction_intensity.png`
 - `center_profiles_compare.png`
 - `center_profiles_compare_initial_mraf_wgs.png`
+- `center_profiles_compare_mraf_xy_xonly.png`
 - `wgs_weights_final.png`
 - `wgs_weight_hist.png`
+- `wgs_x_weights_final.png`
+- `wgs_x_weights_profile.png`
 - `phase0.png`
 - `phase_refined.png`
 - `convergence_metrics.png`
@@ -253,16 +293,23 @@ The lightweight Python diagnostics can also be run on an existing case:
 method = mraf_then_wgs
 mraf_iters = 150
 wgs_iters = 50
+wgs_strategy = xy_then_x
+wgs_xy_iters = 20
+wgs_xonly_iters = 30
 mraf_factor = 0.4
 constraint_mode = truncated_rtad
 release_level = 0.1353352832366127
 bg_factor = 0.05
 wgs_update_mask = flat
 wgs_feedback = amplitude
-wgs_feedback_exponent = 0.3
-wgs_update_every = 5
-wgs_weight_min = 0.5
-wgs_weight_max = 2.0
+wgs_xy_feedback_exponent = 0.3
+wgs_x_feedback_exponent = 0.45
+wgs_xy_update_every = 5
+wgs_x_update_every = 5
+wgs_xy_weight_min = 0.5
+wgs_xy_weight_max = 2.0
+wgs_x_weight_min = 0.5
+wgs_x_weight_max = 2.5
 delta_x_um = 15
 delta_y_um = 8
 guard_x_um = 20

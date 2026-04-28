@@ -26,8 +26,10 @@ from src.plotting import (
     plot_masks,
     plot_phase,
     plot_profiles_compare,
+    plot_profiles_compare_mraf_xy_xonly,
     plot_profiles_compare_initial_mraf_wgs,
     plot_target,
+    plot_wgs_x_weights,
     plot_wgs_weights,
 )
 from src.propagation import make_input_gaussian
@@ -59,10 +61,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metrics-interval", type=int, default=None, help="Metrics logging interval.")
     parser.add_argument("--wgs-after-iters", type=int, default=None, help="Iteration at which WGS updates begin.")
     parser.add_argument("--feedback-exponent", type=float, default=None, help="WGS feedback exponent.")
+    parser.add_argument("--wgs-strategy", default=None, choices=["flat_local", "xy_then_x"], help="WGS strategy.")
+    parser.add_argument("--wgs-xy-iters", type=int, default=None, help="Flat-local XY WGS iterations for strategy=xy_then_x.")
+    parser.add_argument("--wgs-xonly-iters", type=int, default=None, help="X-only WGS iterations for strategy=xy_then_x.")
     parser.add_argument("--wgs-feedback-exponent", type=float, default=None, help="Flat-core WGS amplitude feedback exponent.")
+    parser.add_argument("--wgs-xy-feedback-exponent", type=float, default=None, help="XY WGS feedback exponent.")
+    parser.add_argument("--wgs-x-feedback-exponent", type=float, default=None, help="X-only WGS feedback exponent.")
     parser.add_argument("--wgs-update-every", type=int, default=None, help="Update WGS weights every N WGS iterations.")
+    parser.add_argument("--wgs-xy-update-every", type=int, default=None, help="Update XY WGS weights every N XY iterations.")
+    parser.add_argument("--wgs-x-update-every", type=int, default=None, help="Update x-only WGS weights every N x-only iterations.")
     parser.add_argument("--wgs-weight-min", type=float, default=None, help="Minimum WGS flat-core weight.")
     parser.add_argument("--wgs-weight-max", type=float, default=None, help="Maximum WGS flat-core weight.")
+    parser.add_argument("--wgs-x-weight-min", type=float, default=None, help="Minimum x-only WGS weight.")
+    parser.add_argument("--wgs-x-weight-max", type=float, default=None, help="Maximum x-only WGS weight.")
     parser.add_argument("--wgs-update-mask", default=None, choices=["flat"], help="WGS update mask; first version supports flat only.")
     parser.add_argument("--bg-mode", choices=["keep", "attenuate", "zero"], default=None, help="MRAF background handling.")
     parser.add_argument("--bg-factor", type=float, default=None, help="MRAF background attenuation if bg-mode=attenuate.")
@@ -108,14 +119,32 @@ def apply_overrides(config: dict, args: argparse.Namespace) -> dict:
         cfg["refinement"]["wgs_after_iters"] = args.wgs_after_iters
     if args.feedback_exponent is not None:
         cfg["refinement"]["feedback_exponent"] = args.feedback_exponent
+    if args.wgs_strategy is not None:
+        cfg["refinement"]["wgs_strategy"] = args.wgs_strategy
+    if args.wgs_xy_iters is not None:
+        cfg["refinement"]["wgs_xy_iters"] = args.wgs_xy_iters
+    if args.wgs_xonly_iters is not None:
+        cfg["refinement"]["wgs_xonly_iters"] = args.wgs_xonly_iters
     if args.wgs_feedback_exponent is not None:
         cfg["refinement"]["wgs_feedback_exponent"] = args.wgs_feedback_exponent
+    if args.wgs_xy_feedback_exponent is not None:
+        cfg["refinement"]["wgs_xy_feedback_exponent"] = args.wgs_xy_feedback_exponent
+    if args.wgs_x_feedback_exponent is not None:
+        cfg["refinement"]["wgs_x_feedback_exponent"] = args.wgs_x_feedback_exponent
     if args.wgs_update_every is not None:
         cfg["refinement"]["wgs_update_every"] = args.wgs_update_every
+    if args.wgs_xy_update_every is not None:
+        cfg["refinement"]["wgs_xy_update_every"] = args.wgs_xy_update_every
+    if args.wgs_x_update_every is not None:
+        cfg["refinement"]["wgs_x_update_every"] = args.wgs_x_update_every
     if args.wgs_weight_min is not None:
         cfg["refinement"]["wgs_weight_min"] = args.wgs_weight_min
     if args.wgs_weight_max is not None:
         cfg["refinement"]["wgs_weight_max"] = args.wgs_weight_max
+    if args.wgs_x_weight_min is not None:
+        cfg["refinement"]["wgs_x_weight_min"] = args.wgs_x_weight_min
+    if args.wgs_x_weight_max is not None:
+        cfg["refinement"]["wgs_x_weight_max"] = args.wgs_x_weight_max
     if args.wgs_update_mask is not None:
         cfg["refinement"]["wgs_update_mask"] = args.wgs_update_mask
     if args.bg_mode is not None:
@@ -177,6 +206,8 @@ def make_output_dir(cfg: dict, args: argparse.Namespace) -> Path:
     method = str(cfg.get("refinement", {}).get("method", "mraf"))
     if method == "mraf_then_wgs":
         suffix += "_mrafwgs"
+        if str(cfg.get("refinement", {}).get("wgs_strategy", "")) == "xy_then_x":
+            suffix += "_xyx"
     if cfg.get("target", {}).get("constraint_mode") == "truncated_rtad":
         rel = float(cfg.get("target", {}).get("release_level", 0.0))
         suffix += f"_truncI{int(round(rel * 1000)):04d}"
@@ -272,22 +303,39 @@ def write_report(outdir: Path, cfg: dict, phase_info: dict, target, result) -> N
         "",
         "WGS refinement:",
         f"  method = {cfg['refinement'].get('method')}",
+        f"  wgs_strategy = {cfg['refinement'].get('wgs_strategy')}",
         f"  mraf_iters = {cfg['refinement'].get('mraf_iters')}",
         f"  wgs_iters = {cfg['refinement'].get('wgs_iters')}",
+        f"  wgs_xy_iters = {cfg['refinement'].get('wgs_xy_iters')}",
+        f"  wgs_xonly_iters = {cfg['refinement'].get('wgs_xonly_iters')}",
         f"  wgs_update_mask = {cfg['refinement'].get('wgs_update_mask')} (mask_flat only)",
         f"  wgs_feedback = {cfg['refinement'].get('wgs_feedback')}",
         f"  wgs_feedback_exponent = {cfg['refinement'].get('wgs_feedback_exponent')}",
+        f"  wgs_xy_feedback_exponent = {cfg['refinement'].get('wgs_xy_feedback_exponent')}",
+        f"  wgs_x_feedback_exponent = {cfg['refinement'].get('wgs_x_feedback_exponent')}",
         f"  wgs_update_every = {cfg['refinement'].get('wgs_update_every')}",
+        f"  wgs_xy_update_every = {cfg['refinement'].get('wgs_xy_update_every')}",
+        f"  wgs_x_update_every = {cfg['refinement'].get('wgs_x_update_every')}",
         f"  wgs_weight_clip = [{cfg['refinement'].get('wgs_weight_min')}, {cfg['refinement'].get('wgs_weight_max')}]",
+        f"  wgs_x_weight_clip = [{cfg['refinement'].get('wgs_x_weight_min')}, {cfg['refinement'].get('wgs_x_weight_max')}]",
         f"  wgs_normalize_weights = {cfg['refinement'].get('wgs_normalize_weights')}",
+        f"  wgs_x_normalize = {cfg['refinement'].get('wgs_x_normalize')}",
         "  WGS updates only mask_flat weights. It does not update mask_edge_lock, mask_free, or mask_bg_far.",
         "  MRAF first allocates energy between the RTAD signal/free/background regions; WGS then compensates local flat-core brightness nonuniformity by changing target amplitude weights.",
+        "  xy_then_x stage 1 applies 2D flat-local XY feedback. Stage 2 freezes y-local structure and updates a 1D x weight from the flat-core column-mean amplitude.",
+        "  Diagnostics metrics remain post-processing only; they are not used as constraints.",
+        "",
+        "Run warnings/info:",
+        "\n".join(f"  {w}" for w in (result.warnings or [])) if result.warnings else "  none",
         "",
         "WGS final weight stats:",
         format_metrics(result.wgs_weight_stats_final or {}),
         "",
         "MRAF-end metrics:",
         format_metrics(result.mraf_metrics or {}),
+        "",
+        "WGS-XY-end metrics:",
+        format_metrics(result.wgs_xy_metrics or {}),
         "",
         "Final metrics:",
         format_metrics(result.final_metrics),
@@ -374,8 +422,16 @@ def main() -> int:
         np.save(outdir / "phase_after_mraf.npy", result.phase_after_mraf)
     if result.reconstruction_after_mraf is not None:
         np.save(outdir / "reconstruction_after_mraf.npy", result.reconstruction_after_mraf)
+    if result.phase_after_wgs_xy is not None:
+        np.save(outdir / "phase_after_wgs_xy.npy", result.phase_after_wgs_xy)
+    if result.reconstruction_after_wgs_xy is not None:
+        np.save(outdir / "reconstruction_after_wgs_xy.npy", result.reconstruction_after_wgs_xy)
     if result.wgs_weights_final is not None:
         np.save(outdir / "wgs_weights_final.npy", result.wgs_weights_final)
+    if result.wgs_weights_2d_final is not None:
+        np.save(outdir / "wgs_weights_2d_final.npy", result.wgs_weights_2d_final)
+    if result.wgs_x_weights_final is not None:
+        np.save(outdir / "wgs_x_weights_final.npy", result.wgs_x_weights_final)
     save_metrics_csv(outdir / "metrics.csv", result.metrics_history)
     save_phase_mat(
         outdir / "phase_refined.mat",
@@ -422,8 +478,22 @@ def main() -> int:
             outdir,
             dpi=dpi,
         )
-    if result.wgs_weights_final is not None:
+    if result.reconstruction_after_mraf is not None and result.reconstruction_after_wgs_xy is not None:
+        plot_profiles_compare_mraf_xy_xonly(
+            target,
+            result.reconstruction_after_mraf,
+            result.reconstruction_after_wgs_xy,
+            result.reconstruction_intensity,
+            masks,
+            outdir,
+            dpi=dpi,
+        )
+    if result.wgs_weights_2d_final is not None:
+        plot_wgs_weights(result.wgs_weights_2d_final, masks["mask_flat"], target.x_um, target.y_um, outdir, dpi=dpi)
+    elif result.wgs_weights_final is not None:
         plot_wgs_weights(result.wgs_weights_final, masks["mask_flat"], target.x_um, target.y_um, outdir, dpi=dpi)
+    if result.wgs_x_weights_final is not None:
+        plot_wgs_x_weights(target.x_um, result.wgs_x_weights_final, masks["mask_flat"], target.params, outdir, dpi=dpi)
     plot_convergence(result.metrics_history, outdir, dpi=dpi)
     write_report(outdir, cfg, phase_info, target, result)
     if not args.skip_diagnostics:

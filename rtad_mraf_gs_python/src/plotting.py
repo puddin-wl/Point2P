@@ -294,6 +294,75 @@ def plot_profiles_compare_initial_mraf_wgs(
     plt.close(fig)
 
 
+def plot_profiles_compare_mraf_xy_xonly(
+    target: Any,
+    mraf_intensity: np.ndarray,
+    wgs_xy_intensity: np.ndarray,
+    wgs_xonly_intensity: np.ndarray,
+    masks: dict[str, np.ndarray],
+    outdir: str | Path,
+    dpi: int = 150,
+) -> None:
+    """Save center profiles for MRAF, WGS-XY, and final WGS-Xonly stages."""
+    outdir = Path(outdir)
+    mraf_n = normalize_intensity(mraf_intensity, masks["mask_flat"], mode="flat_mean")
+    xy_n = normalize_intensity(wgs_xy_intensity, masks["mask_flat"], mode="flat_mean")
+    xonly_n = normalize_intensity(wgs_xonly_intensity, masks["mask_flat"], mode="flat_mean")
+    mraf_p = center_profiles(mraf_n, target.x_um, target.y_um)
+    xy_p = center_profiles(xy_n, target.x_um, target.y_um)
+    xonly_p = center_profiles(xonly_n, target.x_um, target.y_um)
+    release_level = float(target.params.get("release_level", np.exp(-2.0)))
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4), constrained_layout=True)
+    panels = [
+        (
+            axes[0],
+            target.profiles["x_um"],
+            mraf_p["x_profile"],
+            xy_p["x_profile"],
+            xonly_p["x_profile"],
+            target.params["a50_um"],
+            target.params["a0_um"],
+            target.params["a1_um"],
+            "x",
+        ),
+        (
+            axes[1],
+            target.profiles["y_um"],
+            mraf_p["y_profile"],
+            xy_p["y_profile"],
+            xonly_p["y_profile"],
+            target.params["b50_um"],
+            target.params["b0_um"],
+            target.params["b1_um"],
+            "y",
+        ),
+    ]
+    for ax, coord, mprof, xyprof, xprof, half50, half0, half1, label in panels:
+        ax.plot(coord, mprof, label="after MRAF", linewidth=1.05)
+        ax.plot(coord, xyprof, label="after WGS-XY", linewidth=1.05)
+        ax.plot(coord, xprof, label="after WGS-Xonly", linewidth=1.15)
+        ax.axhline(0.9, color="0.45", linestyle=":", linewidth=0.8, label="90%")
+        ax.axhline(0.5, color="0.35", linestyle=":", linewidth=0.9, label="50%")
+        ax.axhline(np.exp(-2.0), color="0.45", linestyle=":", linewidth=0.8, label="13.5%")
+        ax.axhline(release_level, color="tab:blue", linestyle="-.", linewidth=0.8, label="release")
+        ax.axvline(-half0, color="0.5", linestyle="--", linewidth=0.8)
+        ax.axvline(half0, color="0.5", linestyle="--", linewidth=0.8)
+        ax.axvline(-half50, color="red", linestyle="-", linewidth=0.8)
+        ax.axvline(half50, color="red", linestyle="-", linewidth=0.8)
+        ax.axvline(-half1, color="0.5", linestyle=":", linewidth=0.8)
+        ax.axvline(half1, color="0.5", linestyle=":", linewidth=0.8)
+        ax.set_xlim(-half1 - 80, half1 + 80)
+        ax.set_ylim(0, max(2.0, float(np.nanpercentile(xprof, 99.5))))
+        ax.grid(True, alpha=0.25)
+        ax.set_xlabel(f"{label} / um")
+        ax.set_ylabel("I / mean(flat)")
+        ax.set_title(f"{label} center profile")
+        ax.legend(fontsize=8)
+    fig.savefig(outdir / "center_profiles_compare_mraf_xy_xonly.png", dpi=dpi)
+    plt.close(fig)
+
+
 def plot_wgs_weights(
     weights: np.ndarray,
     mask_flat: np.ndarray,
@@ -341,6 +410,72 @@ def plot_wgs_weights(
     ax.set_title("Final WGS weight distribution")
     ax.grid(True, alpha=0.25)
     fig.savefig(outdir / "wgs_weight_hist.png", dpi=dpi)
+    plt.close(fig)
+
+
+def plot_wgs_x_weights(
+    x_um: np.ndarray,
+    w_x: np.ndarray,
+    mask_flat: np.ndarray,
+    params: dict[str, Any],
+    outdir: str | Path,
+    dpi: int = 150,
+) -> None:
+    """Save one-dimensional x-only WGS weights and their flat-core broadcast."""
+    outdir = Path(outdir)
+    x_axis = np.asarray(x_um, dtype=np.float64).reshape(-1)
+    w_x = np.asarray(w_x, dtype=np.float32).reshape(-1)
+    mask_flat = np.asarray(mask_flat, dtype=bool)
+    valid_x = np.any(mask_flat, axis=0)
+    vals = w_x[valid_x]
+    a0 = float(params.get("a0_um", 0.0))
+
+    fig, ax = plt.subplots(figsize=(7, 3.8), constrained_layout=True)
+    ax.plot(x_axis, w_x, linewidth=1.2, label="w_x")
+    ax.axhline(1.0, color="0.25", linestyle=":", linewidth=0.9, label="1.0")
+    ax.axvline(-a0, color="red", linestyle="--", linewidth=0.9, label="flat x range")
+    ax.axvline(a0, color="red", linestyle="--", linewidth=0.9)
+    if vals.size:
+        text = f"mean={np.mean(vals):.4g}, std={np.std(vals):.4g}, min={np.min(vals):.4g}, max={np.max(vals):.4g}"
+        ax.text(0.02, 0.95, text, transform=ax.transAxes, ha="left", va="top", fontsize=8)
+    ax.set_xlim(-a0 - 80, a0 + 80)
+    ax.set_xlabel("x / um")
+    ax.set_ylabel("x-only WGS weight")
+    ax.set_title("Final x-only WGS weight profile")
+    ax.grid(True, alpha=0.25)
+    ax.legend(fontsize=8)
+    fig.savefig(outdir / "wgs_x_weights_profile.png", dpi=dpi)
+    plt.close(fig)
+
+    display = np.full(mask_flat.shape, np.nan, dtype=np.float32)
+    display[mask_flat] = np.broadcast_to(w_x[None, :], mask_flat.shape)[mask_flat]
+    cmap = plt.get_cmap("viridis").copy()
+    cmap.set_bad(color="0.65")
+    fig, ax = plt.subplots(figsize=(7, 4.5), constrained_layout=True)
+    if vals.size:
+        vmin = float(np.nanpercentile(vals, 1))
+        vmax = float(np.nanpercentile(vals, 99))
+        if abs(vmax - vmin) < 1e-6:
+            vmin, vmax = float(np.nanmin(vals)), float(np.nanmax(vals) + 1e-6)
+    else:
+        vmin, vmax = 0.5, 2.5
+    im = ax.imshow(
+        display,
+        extent=[float(x_axis[0]), float(x_axis[-1]), -mask_flat.shape[0] / 2.0, mask_flat.shape[0] / 2.0],
+        origin="lower",
+        cmap=cmap,
+        vmin=vmin,
+        vmax=vmax,
+        aspect="auto",
+    )
+    fig.colorbar(im, ax=ax, label="w_x broadcast in mask_flat")
+    ax.axvline(-a0, color="red", linestyle="--", linewidth=0.9)
+    ax.axvline(a0, color="red", linestyle="--", linewidth=0.9)
+    ax.set_xlim(-a0 - 80, a0 + 80)
+    ax.set_xlabel("x / um")
+    ax.set_ylabel("row index offset")
+    ax.set_title("Final x-only WGS weights broadcast in mask_flat")
+    fig.savefig(outdir / "wgs_x_weights_final.png", dpi=dpi)
     plt.close(fig)
 
 
