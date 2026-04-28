@@ -8,6 +8,7 @@ clear; close all; clc;
 project_root = fileparts(mfilename('fullpath'));
 addpath(fullfile(project_root, 'config'));
 addpath(fullfile(project_root, 'src'));
+addpath(fullfile(fileparts(project_root), 'initial_phase_generation'));
 
 cfg = default_config(project_root);
 if ~exist(cfg.save_root, 'dir')
@@ -27,10 +28,19 @@ fprintf('beta_x = %.6f, beta_y = %.6f\n', cfg.beta_x, cfg.beta_y);
 fprintf('Beta note: smaller beta means a harder stationary-phase / finite-aperture design; beta_y is the limiting direction here.\n');
 fprintf('Save root: %s\n\n', cfg.save_root);
 
-[X_m, Y_m, x_m, y_m, grid] = make_grid(cfg);
-[input_field, input_amplitude, input_intensity, aperture_mask] = gaussian_input_field(X_m, Y_m, cfg);
-
-[phase_unwrapped_rad, phase_wrapped_rad, phase_info] = build_separable_phase_2d(X_m, Y_m, aperture_mask, cfg);
+phase_data = generate_initial_phase(cfg);
+X_m = phase_data.X_m;
+Y_m = phase_data.Y_m;
+x_m = phase_data.x_m;
+y_m = phase_data.y_m;
+grid = phase_data.grid;
+input_field = phase_data.input_field;
+input_amplitude = phase_data.input_amplitude;
+input_intensity = phase_data.input_intensity;
+aperture_mask = phase_data.aperture_mask;
+phase_unwrapped_rad = phase_data.phase0_unwrapped_rad;
+phase_wrapped_rad = phase_data.phase0_wrapped_rad;
+phase_info = phase_data.phase_info;
 doe_field = input_field .* exp(1i * phase_unwrapped_rad);
 
 fprintf('Step 1/2: ideal Fourier-lens FFT baseline...\n');

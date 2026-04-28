@@ -1,9 +1,30 @@
 % export_phase_for_python exports the Romero-Dickey initial phase for Python MRAF/WGS refinement.
+%
+% INITIAL PHASE GENERATION:
+% Purpose:
+%   Generate the same phase0 as run_one.m/run_mraf_one.m and save it to a simple
+%   MAT file for external Python refinement or inspection.
+% Inputs:
+%   default_config.m, make_grid.m, gaussian_input_field.m, and
+%   build_separable_phase_2d.m provide the same physical parameters and RD phase
+%   path used by the MATLAB workflows.
+% Outputs:
+%   exports/phase_rd.mat containing phase_rd_wrapped, phase_rd_unwrapped,
+%   phase_wrapped, phase_unwrapped, phase_rad, and export_meta.
+% Physical meaning:
+%   This exports the analytical separable Romero-Dickey phase0, not an MRAF
+%   refined phase.
+% Used by:
+%   External Python code that wants the MATLAB RD initial phase.
+% Notes:
+%   NaN values outside the aperture are converted to zero for easier external
+%   consumption.
 clear; close all; clc;
 
 project_root = fileparts(mfilename('fullpath'));
 addpath(fullfile(project_root, 'config'));
 addpath(fullfile(project_root, 'src'));
+addpath(fullfile(fileparts(project_root), 'initial_phase_generation'));
 
 cfg = default_config(project_root);
 export_dir = fullfile(project_root, 'exports');
@@ -11,9 +32,10 @@ if ~exist(export_dir, 'dir')
     mkdir(export_dir);
 end
 
-[X_m, Y_m, ~, ~, ~] = make_grid(cfg);
-[~, ~, ~, aperture_mask] = gaussian_input_field(X_m, Y_m, cfg);
-[phase_rd_unwrapped, phase_rd_wrapped, phase_info] = build_separable_phase_2d(X_m, Y_m, aperture_mask, cfg);
+phase_data = generate_initial_phase(cfg);
+phase_rd_unwrapped = phase_data.phase0_unwrapped_rad;
+phase_rd_wrapped = phase_data.phase0_wrapped_rad;
+phase_info = phase_data.phase_info;
 phase_rd_unwrapped(~isfinite(phase_rd_unwrapped)) = 0;
 phase_rd_wrapped(~isfinite(phase_rd_wrapped)) = 0;
 
