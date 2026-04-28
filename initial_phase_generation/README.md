@@ -2,6 +2,28 @@
 
 This folder contains the standalone Romero-Dickey initial phase generator used by the MATLAB DOE project. It is self-contained: the files in this folder are enough to generate the initial phase and one ideal Fourier-lens focal-plane flat-top result.
 
+## Status
+
+Current version is verified as the baseline initial-phase module. It generates the Romero-Dickey initial phase with the default parameters:
+
+- `beta_x = 9.060975545`
+- `beta_y = 3.294900198`
+- target size `330 x 120 um`
+- wavelength `532 nm`
+- focal length `429 mm`
+
+Do not change the core phase-generation logic unless a new baseline is intentionally created. Future MRAF/WGS optimization scripts should read the saved baseline phase instead of re-implementing `phase0`:
+
+```matlab
+load('E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat')
+```
+
+The corresponding baseline diagnostics are saved at:
+
+```text
+E:\program\Point2P\result_diagnostics\artifacts\20260428-141916
+```
+
 ## Files
 
 - `default_initial_phase_config.m` — standalone copy of all configuration values needed for initial phase generation.
