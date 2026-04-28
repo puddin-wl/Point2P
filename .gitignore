@@ -1,0 +1,9 @@
+# Generated experiment artifacts
+DOE_ROMERO_DICKEY_MATLAB/artifacts/
+DOE_ROMERO_DICKEY_MATLAB/exports/
+initial_phase_generation/artifacts/
+result_diagnostics/artifacts/
+
+# MATLAB transient files
+*.asv
+*.m~
