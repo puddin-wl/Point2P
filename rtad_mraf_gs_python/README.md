@@ -366,6 +366,213 @@ The combined center-profile figure is:
 artifacts/wgs_weight_min_summary/center_profiles_compare_wgs_weight_min_0p5_0p7_0p8_max1p5.png
 ```
 
+WGS iteration-count sweep with direct WGS, `min=0.5`, and `max=1.5`:
+
+```text
+num_iters = 100, 150, 200, 250, 300
+```
+
+Artifacts:
+
+```text
+artifacts/wgs_num_iters_20260429-151618
+```
+
+Observed trend: after `num_iters=100`, the center profiles change only slightly.
+Increasing from 100 to 300 improves `uniformity_rms_percent` only from about
+94.45% to 94.71%, while the x/y profile shapes are almost overlapping. The
+practical choice is to keep `num_iters = 200` for the next parameter sweeps,
+because later iterations mostly add runtime with very small profile changes.
+
+The combined center-profile figure is:
+
+```text
+artifacts/wgs_num_iters_20260429-151618/center_profiles_compare_num_iters_100_150_200_250_300.png
+```
+
+WGS feedback-exponent sweep with direct WGS, `num_iters=200`, `min=0.5`,
+and `max=1.5`:
+
+```text
+wgs_feedback_exponent = 0.2, 0.3, 0.4, 0.5
+wgs_feedback_exponent = 0.5, 0.6, 0.7, 0.8, 0.9
+```
+
+Artifacts:
+
+```text
+artifacts/wgs_feedback_exponent_20260429-152232
+artifacts/wgs_feedback_exponent_hi_20260429-152556
+```
+
+Observed trend: increasing the feedback exponent improves flat uniformity
+slightly up to about `0.6-0.7`. Above that, the improvement saturates and then
+begins to drift back. The current practical setting for later sweeps is
+`wgs_feedback_exponent = 0.7`.
+
+MRAF free-region factor sweep with direct WGS, `num_iters=200`,
+`wgs_feedback_exponent=0.7`, `min=0.5`, and `max=1.5`:
+
+```text
+mraf_factor = 0.2, 0.4, 0.6, 0.8
+mraf_factor = 1.0, 1.2
+```
+
+Artifacts:
+
+```text
+artifacts/mraf_factor_20260429-153322
+artifacts/mraf_factor_overrelease_20260429-153812
+```
+
+Observed trend: larger `mraf_factor` gives the optimization more freedom in the
+RTAD free region. This strongly improves flat uniformity, but it also broadens
+the edge/halo structure and pushes `size50_x/y` outward. `mraf_factor=1.2`
+over-releases the free region and makes the profile much too wide. The current
+working conclusion is that `mraf_factor = 1.0` is a useful high-uniformity
+baseline, while values above 1 are mainly diagnostic stress tests.
+
+Release-level sweep at `mraf_factor=1.0`:
+
+```text
+release_level = 0.1353352832366127, 0.10, 0.05
+release_level = 0.05, 0.025
+```
+
+Artifacts:
+
+```text
+artifacts/release_level_mraf1_20260429-155649
+artifacts/release_level_mraf1_low_20260429-160039
+```
+
+Observed trend: `13.5%` and `10%` are nearly identical. Lowering the release
+level to `5%` constrains more of the edge, pulls the profile size back, and
+keeps most of the high uniformity from `mraf_factor=1.0`. Lowering further to
+`2.5%` gives almost no additional benefit. The current practical setting is
+`release_level = 0.05`.
+
+Background attenuation sweep at `mraf_factor=1.0` and `release_level=0.05`:
+
+```text
+bg_mode = attenuate
+bg_factor = 0, 0.02, 0.05, 0.1, 0.2
+bg_factor = 0.2, 0.3, 0.4, 0.5
+bg_factor = 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+```
+
+Artifacts are archived together under:
+
+```text
+artifacts/background_attenuation_sweeps_20260429/
+  bg_factor_mraf1_release005_20260429-160705
+  bg_factor_high_mraf1_release005_20260429-161055
+  bg_factor_to_keep_mraf1_release005_20260429-161433
+```
+
+Observed trend: relaxing the far-background constraint has the largest positive
+effect in this round. As `bg_factor` approaches `1.0`, the platform becomes
+flatter and the x-direction `size50` moves close to the 330 um target. The
+tradeoff is that energy is allowed to remain in the far background:
+`background_fraction` rises and the diagnostics-side efficiency/side-lobe
+scores worsen, especially at `bg_factor=1.0`.
+
+Current no-background-attenuation baseline from the final background sweep
+(`bg_factor_to_keep_mraf1_release005_20260429-161433/bg_factor_1p00`):
+
+```text
+method = wgs
+wgs_strategy = flat_local
+num_iters = 200
+wgs_feedback_exponent = 0.7
+wgs_weight_min = 0.5
+wgs_weight_max = 1.5
+mraf_factor = 1.0
+release_level = 0.05
+bg_mode = attenuate
+bg_factor = 1.0
+```
+
+With `bg_mode="attenuate"` and `bg_factor=1.0`, the far-background projection is
+effectively left unchanged. The working judgment after these sweeps is that not
+attenuating the far background is the strongest improvement so far. Lowering
+`release_level` to `0.05` and using `mraf_factor=1.0` also remain useful, but
+the next parameter sweeps should be based on the no-background-attenuation
+baseline unless the background policy itself is being retested.
+
+After cutting off the old artifact history, a new no-background-attenuation
+`mraf_factor` sweep tested `0.8`, `1.0`, and `1.2`:
+
+```text
+artifacts/mraf_factor_nobg_baseline_20260429-170901
+```
+
+Working judgment: `mraf_factor=0.8` and `1.0` are broadly similar, but `0.8`
+has a better visual profile in the details. `mraf_factor=1.2` is clearly too
+aggressive: it improves the nominal flatness metric, but damages the outside
+shape and should not be used as the next baseline. The next sweeps use
+`mraf_factor=0.8` unless this parameter is being retested.
+
+The follow-up no-background release-level sweep used `mraf_factor=0.8` and
+tested `0.05`, `0.10`, `0.135`, and `0.15`:
+
+```text
+artifacts/release_level_nobg_mraf0p8_20260429-171931
+```
+
+Working judgment: `release_level` does not strongly affect this result over the
+tested range. `0.05`, `0.10`, and `0.135` are visually and metrically close, so
+the next sweeps can return to the original 13.5% release setting. `0.15` is less
+attractive and should not be used as the working point. Starting with the next
+comparison figures, include RMS nonuniformity (`rms_nonuniformity_percent`) and
+use `efficiency_e2_percent` as the standard diffraction-efficiency metric in the
+on-figure summary table. Do not label `efficiency_flat` as diffraction
+efficiency; it is only the power fraction inside the flat core.
+
+The follow-up no-background WGS feedback-exponent sweep used
+`mraf_factor=0.8`, `release_level=0.1353352832366127`, and tested `0.2` through
+`0.8`:
+
+```text
+artifacts/wgs_feedback_exponent_nobg_mraf0p8_rel0135_20260429-172747
+```
+
+Working observation: the RMS metric improves as the exponent rises from `0.2`
+to roughly `0.5`, then changes only mildly. Visually, `wgs_feedback_exponent=0.8`
+has the lowest shoulder in this sweep, even though the global RMS metric is not
+the absolute minimum at that point. The next sweeps use
+`wgs_feedback_exponent=0.8` as the temporary visual-profile baseline.
+
+The next no-background `wgs_weight_max` sweep used `wgs_feedback_exponent=0.8`
+and tested `1.5`, `2.0`, `2.5`, and `3.0`:
+
+```text
+artifacts/wgs_weight_max_nobg_mraf0p8_rel0135_exp0p8_20260429-173633
+```
+
+Working judgment: `wgs_weight_max=1.5` through `2.5` are broadly similar in the
+center profiles, with larger max improving RMS but also pushing the y-direction
+size upward. `3.0` gives little extra benefit. The current working point is
+`wgs_weight_max=2.0`; keep `wgs_weight_min=0.5`.
+
+A fixed-baseline run for direct comparison against the initial phase was then
+generated with the current working parameters:
+
+```text
+method = wgs
+wgs_strategy = flat_local
+num_iters = 200
+wgs_feedback_exponent = 0.8
+wgs_weight_min = 0.5
+wgs_weight_max = 2.0
+mraf_factor = 0.8
+release_level = 0.1353352832366127
+bg_mode = attenuate
+bg_factor = 1.0
+
+artifacts/fixed_baseline_initial_compare_20260429-174537
+```
+
 Earlier MRAF/WGS trials:
 
 ```text
