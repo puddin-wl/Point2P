@@ -287,6 +287,77 @@ The lightweight Python diagnostics can also be run on an existing case:
 & 'D:\software\anaconda\envs\slmrtad\python.exe' .\run_diagnostics_case.py "E:\program\Point2P\rtad_mraf_gs_python\artifacts\20260428-164830_rtad_mraf_gs"
 ```
 
+## Phase 1 Summary / 第一阶段总结
+
+第一阶段的 DOE 设计流程已经收束为两步：
+
+1. 先用 Point2P 生成点对点初始相位 `phase0`。
+2. 再把 `phase0` 作为初值，在当前 Python 程序中用 direct flat-local WGS
+   做平顶匀化优化。
+
+在这个流程里，`phase0` 提供一个已经接近目标能量分布的物理解；WGS 不重新
+设计点对点映射，而是在这个初始相位上继续调节焦平面复振幅投影，主要目标
+是把矩形平顶区压得更均匀。当前 WGS 的反馈只更新 `mask_flat` 内的权重；
+`size50`、`13.5%` 尺寸、传输区宽度、RMS 和 e^-2 衍射效率都是诊断指标，
+不是 WGS 直接优化的约束。
+
+第一阶段最重要的经验判断是：背景处理比单独微调 WGS 权重范围、迭代次数或
+release level 更关键。早期对远背景做较强衰减时，平台更容易被背景约束
+牵制；随着 `bg_factor` 增大，远背景基本不再被强行压低，平台均匀性和中心
+剖面观感明显改善。后续阶段应以“不强约束背景”为默认大方向，先把这个策略
+固定下来，再继续测试其他参数。
+
+阶段末的工作基线为：
+
+```text
+method = wgs
+wgs_strategy = flat_local
+num_iters = 200
+wgs_feedback_exponent = 0.8
+wgs_weight_min = 0.5
+wgs_weight_max = 2.0
+mraf_factor = 0.8
+release_level = 0.1353352832366127
+bg_mode = attenuate
+bg_factor = 0.9
+```
+
+这里的 `bg_factor=0.9` 保留了非常弱的背景衰减，但实质上已经接近“不管背景”
+的策略；`bg_factor=1.0` 则是完全不衰减远背景。第一阶段的判断不是某一个
+数字必须固定为 0.9 或 1.0，而是确认“不要强行压背景”这一方向是对的。
+
+该基线结果位于：
+
+```text
+artifacts/fixed_baseline_bg0p9_initial_compare_20260429-175148
+```
+
+关键诊断结果：
+
+```text
+size50_x/y = 330.18 / 123.62 um
+size13.5_x/y = 350.70 / 145.55 um
+transition_13.5_90_x/y = 20.32 / 21.68 um
+rms_nonuniformity_percent = 1.86%
+efficiency_e2_percent = 92.52%
+```
+
+`efficiency_e2_percent` 是后续记录和汇报中使用的标准总衍射效率指标；
+`efficiency_flat` 只表示平顶核心区域内的功率占比，不再作为总衍射效率使用。
+
+最终汇报样式 PDF 和中心剖面数据保存在：
+
+```text
+artifacts/fixed_baseline_bg0p9_initial_compare_20260429-175148/refined_only_center_profiles/
+  wgs_refined_simulation_report_spec_style.pdf
+  center_profiles_refined_only_data.csv
+  center_profiles_refined_only_data.npz
+  center_profiles_refined_only_metrics.json
+```
+
+下一阶段建议从这个 no/weak-background baseline 出发，优先确认背景策略的
+稳定性，然后再继续测试新的目标函数、边缘约束或其他传播/制造相关参数。
+
 ## Recent Trial Notes
 
 These notes summarize the parameter trials run on 2026-04-28. They are
@@ -598,6 +669,9 @@ MRAF only, truncated RTAD release=exp(-2):
 ```
 
 ## First Recommended Parameters
+
+This early recommendation is kept as historical context. It has been superseded
+for the next phase by the Phase 1 working baseline above.
 
 ```text
 method = mraf_then_wgs
