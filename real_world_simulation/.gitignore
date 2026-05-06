@@ -1,0 +1,6 @@
+# Generated simulation outputs
+artifacts/
+
+# Python caches
+__pycache__/
+*.py[cod]
