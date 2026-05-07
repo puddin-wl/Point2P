@@ -4,6 +4,19 @@ DOE_ROMERO_DICKEY_MATLAB/exports/
 initial_phase_generation/artifacts/
 result_diagnostics/artifacts/
 
+# Project working directories
+.claude/
+text/
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+
 # MATLAB transient files
 *.asv
 *.m~
