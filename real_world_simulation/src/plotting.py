@@ -67,24 +67,49 @@ def plot_intensity_image(
     plt.close(fig)
 
 
+def _is_negative_defocus(label: str) -> bool:
+    """Detect negative defocus from common label patterns."""
+    import re
+    m = re.search(r"df=([+-]?\d*\.?\d+)", label)
+    if m:
+        return float(m.group(1)) < 0
+    return False
+
+
 def make_profiles_figure(profile_results: list[dict[str, Any]], target: TargetData) -> plt.Figure:
-    """Create a center-profile overlay figure."""
-    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.2), constrained_layout=True)
+    """Create a center-profile overlay figure.
+
+    Positive defocus → solid line; negative defocus → dashed line.
+    Legend is placed in a separate row below the plots.
+    """
+    n_labels = len(profile_results)
+    legend_rows = max(1, (n_labels + 5) // 6)
+
+    fig = plt.figure(figsize=(13.0, 4.5 + legend_rows * 0.35))
+    gs = fig.add_gridspec(2, 2, height_ratios=[5, legend_rows], hspace=0.35, wspace=0.28,
+                          left=0.06, right=0.98, top=0.94, bottom=0.06)
+
+    ax_x = fig.add_subplot(gs[0, 0])
+    ax_y = fig.add_subplot(gs[0, 1])
+    ax_legend = fig.add_subplot(gs[1, :])
+    ax_legend.axis("off")
+
     params = target.params
-    for ax, axis_name in zip(axes, ["x", "y"]):
+    for ax, axis_name in [(ax_x, "x"), (ax_y, "y")]:
         coord_key = f"{axis_name}_um"
         prof_key = f"{axis_name}_profile"
         half0 = float(params.get("a0_um" if axis_name == "x" else "b0_um"))
         half50 = float(params.get("a50_um" if axis_name == "x" else "b50_um"))
         half1 = float(params.get("a1_um" if axis_name == "x" else "b1_um"))
         for result in profile_results:
+            label = result["label"]
+            ls = "--" if _is_negative_defocus(label) else "-"
             profiles = result["details"]["profiles"]
             ax.plot(
                 profiles[coord_key],
                 profiles[prof_key],
-                linewidth=1.0,
-                alpha=0.82,
-                label=result["label"],
+                linewidth=1.0, alpha=0.82, linestyle=ls,
+                label=label,
             )
         ax.axhline(0.9, linestyle=":", color="0.45", linewidth=0.9)
         ax.axhline(0.5, linestyle=":", color="0.25", linewidth=0.9)
@@ -101,7 +126,13 @@ def make_profiles_figure(profile_results: list[dict[str, Any]], target: TargetDa
         ax.set_ylabel("I / mean(flat)")
         ax.set_title(f"{axis_name} center profile")
         ax.grid(True, alpha=0.25)
-    axes[1].legend(fontsize=7, loc="upper right")
+
+    handles, labels = ax_y.get_legend_handles_labels()
+    ax_legend.legend(
+        handles, labels,
+        fontsize=4.5, ncol=6, loc="upper center",
+        frameon=True, fancybox=True, framealpha=0.9,
+    )
     return fig
 
 
@@ -212,8 +243,7 @@ def write_pdf_report(
     rows: list[dict[str, Any]],
     profile_results: list[dict[str, Any]],
     target: TargetData,
-    nominal_intensity: np.ndarray,
-    worst_intensity: np.ndarray,
+    results: list[dict[str, Any]],
     warnings: list[str],
 ) -> None:
     """Write a compact PDF report for one sweep."""
@@ -225,6 +255,6 @@ def write_pdf_report(
         profile_fig = make_profiles_figure(profile_results, target)
         pdf.savefig(profile_fig)
         plt.close(profile_fig)
-        _add_intensity_page(pdf, nominal_intensity, target, "Representative nominal intensity")
-        _add_intensity_page(pdf, worst_intensity, target, "Representative worst intensity")
+        for result in results:
+            _add_intensity_page(pdf, result["intensity"], target, result["label"])
 

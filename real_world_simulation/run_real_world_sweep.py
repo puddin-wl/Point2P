@@ -238,20 +238,15 @@ def run_one_sweep(
     )
     plot_profiles_overlay(profile_results, target, outdir / "center_profiles_overlay.png", dpi=int(cfg["runtime"]["figure_dpi"]))
     plot_metric_trends(rows, outdir / "metric_trends.png", dpi=int(cfg["runtime"]["figure_dpi"]))
-    plot_intensity_image(
-        nominal["intensity"],
-        target,
-        outdir / "representative_intensity_nominal.png",
-        f"Nominal: {nominal['label']}",
-        dpi=int(cfg["runtime"]["figure_dpi"]),
-    )
-    plot_intensity_image(
-        worst["intensity"],
-        target,
-        outdir / "representative_intensity_worst.png",
-        f"Worst: {worst['label']}",
-        dpi=int(cfg["runtime"]["figure_dpi"]),
-    )
+    for result in results:
+        label_safe = result["label"].replace("=", "_").replace(".", "p")
+        plot_intensity_image(
+            result["intensity"],
+            target,
+            outdir / f"intensity_{label_safe}.png",
+            result["label"],
+            dpi=int(cfg["runtime"]["figure_dpi"]),
+        )
     if not no_pdf:
         write_pdf_report(
             outdir / "simulation_report.pdf",
@@ -259,8 +254,7 @@ def run_one_sweep(
             rows=rows,
             profile_results=profile_results,
             target=target,
-            nominal_intensity=nominal["intensity"],
-            worst_intensity=worst["intensity"],
+            results=results,
             warnings=all_warnings,
         )
     return outdir

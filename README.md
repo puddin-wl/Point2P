@@ -116,3 +116,71 @@ Summary figures:
 rtad_mraf_gs_python\artifacts\wgs_weight_max_summary\center_profiles_compare_wgs_weight_max_1p0_1p5_2p0_2p5_3p0.png
 rtad_mraf_gs_python\artifacts\wgs_weight_min_summary\center_profiles_compare_wgs_weight_min_0p5_0p7_0p8_max1p5.png
 ```
+
+---
+
+## 2026-05-06 Session — Real-World Tolerance Sweeps & Error Fitting
+
+### Divergence Sweeps
+
+Ran stress-level divergence sweep (`--sweep divergence --profile stress`, ±0.5 mrad)
+and a fine sweep (±0.01 mrad, ±0.005 mrad).  The convergent (negative) direction
+is significantly more sensitive than the divergent direction.  At ±0.005 mrad the
+RMS non-uniformity already doubles from the nominal 1.86 %.
+
+All divergence sweep outputs are archived in
+`real_world_simulation\artifacts\divergence_sweeps\`.
+
+### Sweep Output Enhancements
+
+- Modified `run_real_world_sweep.py` and `src/plotting.py` so that every sweep
+  case saves an individual focal-plane intensity image (not just nominal+worst).
+- All images are included in the per-sweep PDF report.
+- Center-profile overlay legends are moved below the figure for sweeps with more
+  than 10 cases.
+
+### Error Fitting — Five Observed Spot Problems
+
+Identified root causes for five typical flat-top spot errors by running
+single-parameter and compound sweeps across the 7 error types (defocus,
+beam offset, beam size, divergence, pointing, aperture, ellipticity):
+
+| # | Problem | Root Cause |
+|---|---------|-----------|
+| 1 | Long-edge concavity (长边中间内凹) | Ellipticity Dx > Dy |
+| 2 | Long-edge energy loss + short-edge tilt | beam_offset_x + beam_offset_y |
+| 3 | All four edges concave (四条边都内凹) | Negative defocus + beam size ≥ 5.5 mm |
+| 4 | Energy piling at top/bottom | beam_size (already known) |
+| 5 | Wrong aspect ratio | Pending further analysis |
+
+All fitting results are documented in:
+- `real_world_simulation\artifacts\error_fitting_summary.md`
+- `presentation\error_fitting_summary.md`
+
+### Presentation
+
+Created a Beamer PDF presentation (24 pages, XeLaTeX) summarizing the entire
+project: Romero-Dickey theory, RTAD target, WGS optimization, tolerance
+assessment, and the five error-fitting results.  Source and PDF are in:
+
+```text
+presentation\
+    Point2P_Project_Report.tex
+    Point2P_Project_Report.pdf         (24 pages)
+    Point2P_Project_Summary.md
+    Presentation_Outline.md
+    error_fitting_summary.md
+    RTAD\          (baseline images)
+    PROBLEM1\      (ellipticity comparison)
+    PROBLEM2\      (beam offset)
+    PROBLEM3\      (defocus + beam size)
+    BEAMSIZE\      (beam size worst case)
+    OVERLAY\       (profile overlays)
+```
+
+### LaTeX Environment
+
+TeX Live 2025 was installed locally at `C:\texlive\2025\`. The presentation
+compiles with `xelatex Point2P_Project_Report.tex` from the `presentation\`
+directory.  It can also be compiled on Overleaf (upload the `.tex` file and
+the image subfolders).
