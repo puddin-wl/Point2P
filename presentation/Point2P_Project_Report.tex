@@ -20,7 +20,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 
-\graphicspath{{RTAD/}{PROBLEM1/}{PROBLEM3/}{PROBLEM2/}{BEAMSIZE/}{OVERLAY/}}
+\graphicspath{{RTAD/}{PROBLEM1/}{PROBLEM3/}{PROBLEM2/}{BEAMSIZE/}{OVERLAY/}{./}}
 
 \newcommand{\blue}[1]{\textcolor{blue!70!black}{#1}}
 \newcommand{\orange}[1]{\textcolor{orange}{#1}}
@@ -80,9 +80,9 @@
 \section{物理基础}
 
 \begin{frame}{物理基础 \ \ Romero-Dickey 点对点法}
-  {\footnotesize Romero \& Dickey, ``Lossless laser beam shaping,'' \textit{J. Opt. Soc. Am. A}, 13(4), 751--760 (1996).}
+  {\scriptsize Romero \& Dickey, ``Lossless laser beam shaping,'' \textit{J. Opt. Soc. Am. A}, 13(4), 751--760 (1996).}
 
-  \vspace{0.1cm}
+  \vspace{0.05cm}
   \begin{itemize}
     \item 菲涅尔近似下，用稳相法 (stationary phase) 解析求解高斯$\to$平顶的 DOE 相位
     \item 解的质量由无量纲参数 $\beta$ 决定：
@@ -94,8 +94,10 @@
     \item $\beta$ 越大 $\to$ 几何光学近似越精确；$\beta<6/\pi\approx 1.91$ 时无合理解
   \end{itemize}
 
+  \vspace{-0.1cm}
   \begin{table}
     \rowcolors{2}{gray!10}{white}
+    \footnotesize
     \begin{tabular}{llll}
       \toprule
       \textbf{参数} & \textbf{符号} & \textbf{值} & \textbf{说明} \\
@@ -116,20 +118,18 @@
     \column{0.5\textwidth}
     \textbf{一维无纲量相位} ($\xi = x/r_i$):
     \[
-      \boxed{\;
-      \phi(\xi) = \beta \cdot \left[
-        \xi\frac{\sqrt{\pi}}{2}\,\mathrm{erf}(\xi)
-        + \frac{1}{2}e^{-\xi^{2}}
-        - \frac{1}{2}
-      \right]
-      \;}
+      \phi(\xi) = \beta \Bigl[
+        \tfrac{\sqrt{\pi}}{2}\xi\,\mathrm{erf}(\xi)
+        + \tfrac{1}{2}e^{-\xi^{2}}
+        - \tfrac{1}{2}
+      \Bigr]
     \]
     \textbf{二维可分离}:
     $\phi(x,y) = \beta_x f(x/r_i) + \beta_y f(y/r_i)$
 
     \column{0.5\textwidth}
     \begin{center}
-      \includegraphics[width=\textwidth]{phase0.png}\\
+      \includegraphics[width=0.82\textwidth]{phase0.png}\\
       {\footnotesize Romero-Dickey 初始相位 phase0 (wrapped $[0,2\pi)$)}
     \end{center}
   \end{columns}
@@ -177,7 +177,8 @@
 
     \begin{table}
       \rowcolors{2}{gray!10}{white}
-      \begin{tabular}{p{2.3cm}p{4.2cm}}
+      \footnotesize
+      \begin{tabular}{p{1.7cm}p{3.2cm}}
         \toprule
         \textbf{区域} & \textbf{投影方式} \\
         \midrule
@@ -195,11 +196,11 @@
 
     \column{0.45\textwidth}
     \begin{center}
-      \includegraphics[width=\textwidth]{target_constraint_intensity.png}\\
-      {\footnotesize RTAD 约束目标}
-      \vspace{0.3cm}
-      \includegraphics[width=\textwidth]{masks.png}\\
-      {\footnotesize 区域划分 (masks)}
+      \includegraphics[width=0.72\textwidth]{target_constraint_intensity.png}\\
+      {\scriptsize RTAD 约束目标}
+      \vspace{0.0cm}
+      \includegraphics[width=0.72\textwidth]{masks.png}\\
+      {\scriptsize 区域划分 (masks)}
     \end{center}
   \end{columns}
 \end{frame}
@@ -217,11 +218,9 @@
     \item \textbf{WGS 权重反馈} (仅 mask\_flat 内):
   \end{enumerate}
   \[
-    \boxed{\;
-    w \leftarrow w\cdot\left(\frac{\langle|E_{\mathrm{flat}}|\rangle}{|E|}\right)^{\gamma},\quad
-    w = \mathrm{clip}(w,\,0.5,\,2.0),\quad
+    w \leftarrow w\cdot\bigl(\tfrac{\langle|E_{\mathrm{flat}}|\rangle}{|E|}\bigr)^{\gamma},\;
+    w = \mathrm{clip}(w,\,0.5,\,2.0),\;
     w\; /\!= \langle w\rangle
-    \;}
   \]
 \end{frame}
 
@@ -230,19 +229,19 @@
   \begin{columns}
     \column{0.5\textwidth}
     \begin{center}
-      \includegraphics[width=\textwidth]{initial_reconstruction_intensity.png}\\
+      \includegraphics[width=0.92\textwidth]{initial_reconstruction_intensity.png}\\
       {\footnotesize 优化前 (Phase0) \quad RMS $\gg$ 1.86\%}
     \end{center}
     \column{0.5\textwidth}
     \begin{center}
-      \includegraphics[width=\textwidth]{refined_reconstruction_intensity.png}\\
+      \includegraphics[width=0.92\textwidth]{refined_reconstruction_intensity.png}\\
       {\footnotesize 优化后 (WGS 200 iter) \quad RMS = 1.86\%}
     \end{center}
   \end{columns}
 
-  \vspace{0.3cm}
+  \vspace{0.05cm}
   \begin{center}
-    \includegraphics[width=0.75\textwidth]{center_profiles_compare.png}\\
+    \includegraphics[width=0.62\textwidth]{center_profiles_compare.png}\\
     {\footnotesize 优化前后中心剖面对比 (x/y) —— 平台均匀性显著改善}
   \end{center}
 \end{frame}
@@ -257,27 +256,24 @@
       \item[\orange{$\star$}] 直接 WGS 优于 MRAF-only 和 MRAF$\to$WGS 混合
     \end{itemize}
 
-    \vspace{0.2cm}
     \textbf{工作参数}:
+    \footnotesize
     \begin{itemize}
-      \item method = wgs
-      \item strategy = flat\_local
-      \item iterations = 200
-      \item feedback\_exponent = 0.8
+      \item method = wgs\quad strategy = flat\_local
+      \item iterations = 200\quad feedback\_exponent = 0.8
       \item weight range = [0.5, 2.0]
-      \item mraf\_factor = 0.8
-      \item bg\_factor = 1.0
+      \item mraf\_factor = 0.8\quad bg\_factor = 1.0
     \end{itemize}
 
     \column{0.45\textwidth}
     \begin{center}
-      \includegraphics[width=\textwidth]{convergence_metrics.png}\\
+      \includegraphics[width=0.90\textwidth]{convergence_metrics.png}\\
       {\footnotesize 收敛曲线}
     \end{center}
   \end{columns}
 
-  \vspace{0.15cm}
   \begin{center}
+    \scriptsize
     \orange{\textbf{基线结果:~~size50 = $330.2\!\times\!123.6\,\mu$m~~$|$~~RMS = 1.86\%~~$|$~~$e^{-2}$ 效率 = 92.5\%}}
   \end{center}
 \end{frame}
@@ -291,6 +287,7 @@
   \vspace{0.1cm}
   \begin{table}
     \rowcolors{2}{gray!10}{white}
+    \small
     \begin{tabular}{lll}
       \toprule
       \textbf{误差类型} & \textbf{参数} & \textbf{物理含义} \\
@@ -307,28 +304,25 @@
   \end{table}
 
   \begin{center}
-    每种误差独立扫描 (mild + stress)，双参数组合扫描用于定位耦合效应
+    \tiny 每种误差独立扫描 + 双参数组合扫描定位耦合效应
   \end{center}
 \end{frame}
 
 % ===================================================================
 \begin{frame}{问题  --  长边中间内凹  $\to$  椭圆度 $D_x > D_y$}
-  \begin{columns}
+  \begin{columns}[T]
     \column{0.33\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_nominal_Dx5p0_Dy5p0.png}\\
-      {\footnotesize nominal: $D_x\!=\!D_y\!=\!5.0$mm}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_nominal_Dx5p0_Dy5p0.png}\\[2pt]
+    {\footnotesize nominal: $D_x\!=\!D_y\!=\!5.0$mm}
     \column{0.33\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_Dx5p5_Dy4p5.png}\\
-      {\footnotesize $D_x\!=\!5.5$,\, $D_y\!=\!4.5$mm \quad 内凹+5.8$\mu$m}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_Dx5p5_Dy4p5.png}\\[2pt]
+    {\footnotesize $D_x\!=\!5.5$,\, $D_y\!=\!4.5$mm \quad 内凹+5.8$\mu$m}
     \column{0.33\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_Dx6p0_Dy4p0.png}\\
-      {\footnotesize $D_x\!=\!6.0$,\, $D_y\!=\!4.0$mm \quad 内凹+12.8$\mu$m}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_Dx6p0_Dy4p0.png}\\[2pt]
+    {\footnotesize $D_x\!=\!6.0$,\, $D_y\!=\!4.0$mm \quad 内凹+12.8$\mu$m}
   \end{columns}
 
   \vspace{0.2cm}
@@ -340,27 +334,23 @@
 
 % ===================================================================
 \begin{frame}{问题  --  四条边都内凹  $\to$  负离焦 + 光斑偏大}
-  \begin{columns}
+  \begin{columns}[T]
     \column{0.25\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_nominal_p3.png}\\
-      {\footnotesize nominal}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_nominal_p3.png}\\[2pt]
+    {\footnotesize nominal}
     \column{0.25\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_df=m0p50mm_sz=5p5mm.png}\\
-      {\footnotesize $df\!=\!-0.5$, $sz\!=\!5.5$mm}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_df=m0p50mm_sz=5p5mm.png}\\[2pt]
+    {\footnotesize $df\!=\!-0.5$, $sz\!=\!5.5$mm}
     \column{0.25\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_df=m1p00mm_sz=6p0mm.png}\\
-      {\footnotesize $df\!=\!-1.0$, $sz\!=\!6.0$mm}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_df=m1p00mm_sz=6p0mm.png}\\[2pt]
+    {\footnotesize $df\!=\!-1.0$, $sz\!=\!6.0$mm}
     \column{0.25\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_df=p0p50mm_sz=4p0mm.png}\\
-      {\footnotesize 对照: $df\!=\!+0.5$, $sz\!=\!4.0$mm}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_df=p0p50mm_sz=4p0mm.png}\\[2pt]
+    {\footnotesize 对照: $df\!=\!+0.5$, $sz\!=\!4.0$mm}
   \end{columns}
 
   \vspace{0.2cm}
@@ -372,17 +362,15 @@
 
 % ===================================================================
 \begin{frame}{问题  --  长边能量缺失 + 短边倾斜  $\to$  beam\_offset}
-  \begin{columns}
+  \begin{columns}[T]
     \column{0.5\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_nominal_p2.png}\\
-      {\footnotesize nominal}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_nominal_p2.png}\\[2pt]
+    {\footnotesize nominal}
     \column{0.5\textwidth}
-    \begin{center}
-      \includegraphics[width=\textwidth]{intensity_ox=0p3_oy=0p3.png}\\
-      {\footnotesize $offset_x\!=\!0.3$mm, $offset_y\!=\!0.3$mm}
-    \end{center}
+    \centering
+    \includegraphics[width=\textwidth]{intensity_ox=0p3_oy=0p3.png}\\[2pt]
+    {\footnotesize $offset_x\!=\!0.3$mm, $offset_y\!=\!0.3$mm}
   \end{columns}
 
   \vspace{0.15cm}
@@ -405,25 +393,10 @@
 \end{frame}
 
 % ===================================================================
-\begin{frame}{误差对照总览}
-  \begin{center}
-    \includegraphics[width=0.75\textwidth]{OVERLAY/overlay_problem1.png}\\
-    {\footnotesize 问题 1 中心剖面叠加 —— 椭圆度逐级增大，内凹加深}
-  \end{center}
-\end{frame}
-
-% ===================================================================
-\begin{frame}{误差对照总览 (续)}
-  \begin{center}
-    \includegraphics[width=0.75\textwidth]{OVERLAY/overlay_problem3.png}\\
-    {\footnotesize 问题 3 中心剖面叠加 —— 实线 = 正离焦，虚线 = 负离焦}
-  \end{center}
-\end{frame}
-
-% ===================================================================
 \section{项目架构}
 
 \begin{frame}[fragile]{项目架构}
+  \scriptsize
   \begin{verbatim}
 Point2P/
 ├── initial_phase_generation/   [MATLAB]  Romero-Dickey 初始相位
@@ -439,6 +412,15 @@ Point2P/
 ├── result_diagnostics/         [MATLAB]  焦平面诊断 (备用)
 └── text/                       参考文献 (x4)
   \end{verbatim}
+\end{frame}
+
+% ===================================================================
+\begin{frame}{项目架构 \ \ 实验光路}
+  \begin{center}
+    \includegraphics[width=0.85\textwidth]{光路图.pdf}\\
+    \vspace{0.15cm}
+    {\footnotesize DOE 面（输入高斯）$\;\to\;$ 傅里叶透镜（$f=429$\,mm）$\;\to\;$ 焦平面观测}
+  \end{center}
 \end{frame}
 
 % ===================================================================
@@ -472,8 +454,9 @@ Point2P/
     \end{itemize}
   \end{enumerate}
 
-  \vspace{0.1cm}
+  \vspace{0.05cm}
   \begin{center}
+    \footnotesize
     \orange{关键容差量级:~~发散角 $\sim\pm 0.005$\,mrad~~$|$~~离焦 $\sim\pm 0.75$\,mm~~$|$~~偏移 $\sim\pm 0.2$\,mm}
   \end{center}
 \end{frame}
