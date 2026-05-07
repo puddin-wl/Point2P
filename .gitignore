@@ -8,6 +8,17 @@ result_diagnostics/artifacts/
 .claude/
 text/
 
+# Temporary exploration / fitting scripts
+real_world_simulation/diagnose_concavity.py
+real_world_simulation/explore_problem1.py
+real_world_simulation/explore_problem2.py
+real_world_simulation/fit_problem1.py
+real_world_simulation/fit_problem3.py
+real_world_simulation/fit_problem3_compound.py
+real_world_simulation/make_summary_pdf.py
+real_world_simulation/rerun_problem3.py
+real_world_simulation/test_divergence_fine.py
+
 # LaTeX build artifacts
 *.aux
 *.log
