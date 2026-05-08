@@ -28,6 +28,15 @@ real_world_simulation/test_divergence_fine.py
 *.toc
 *.vrb
 
+# Lab-test artifacts (large .npy / .mat files)
+lab_test_f100mm/artifacts/
+lab_test_f300mm/artifacts/
+truncated_beam_phase/artifacts/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
 # MATLAB transient files
 *.asv
 *.m~
