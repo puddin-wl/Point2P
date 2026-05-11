@@ -271,28 +271,29 @@ comparable to the validated f=300mm SLM phases.
 
 ---
 
-## Results: f=200mm, 7mm Beam
+## Results: f=200mm, All Beam Diameters
 
 Refinement: direct WGS, flat_local strategy, 200 iterations, RTX 5070 Ti (~3s).
 
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| RMS nonuniformity | **0.18%** | < 2% | ✓ |
-| size50_x | 327.1 μm | 330 μm | ✓ (−2.9 μm) |
-| size50_y | 118.3 μm | 120 μm | ✓ (−1.7 μm) |
-| e⁻² efficiency | 97.6% | — | ✓ |
-| size13.5_x / size13.5_y | 344.5 / 127.8 μm | — | |
-| transition 13.5→90 x / y | 18.7 / 10.6 μm | — | |
-| Peak overshoot | 0.84% | — | ✓ |
+| Beam | β_x / β_y | RMS | size50_x | size50_y | e⁻² eff. |
+|------|-----------|-----|----------|----------|----------|
+| 4.5mm | 17.5 / 6.4 | 0.25% | 328.9 | 118.1 | 96.8% |
+| 5.0mm | 19.4 / 7.1 | 0.12% | 328.2 | 117.8 | 96.5% |
+| 5.5mm | 21.4 / 7.8 | 0.13% | 326.5 | 118.1 | 95.7% |
+| 6.0mm | 23.3 / 8.5 | 0.09% | 326.9 | 118.1 | 95.7% |
+| 7.0mm | 27.2 / 9.9 | 0.18% | 327.1 | 118.3 | 97.6% |
 
-Convergence path:
+All beams meet the <2% RMS target. Best uniformity: 6.0mm (0.09%).
+Worst: 4.5mm (0.25%) — β_y=6.4 is deepest in the diffraction regime.
 
-| Stage | Iteration | RMS |
-|-------|-----------|-----|
-| Initial RD phase | 0 | ~15% (estimated) |
-| WGS | 100 | ~0.5% |
-| WGS | 150 | ~0.3% |
-| WGS | 200 | **0.18%** |
+Output artifacts per beam:
+```
+artifacts/20260511-185912_rtad_mraf_gs_truncI0135/  (5.5mm)
+artifacts/20260511-190932_rtad_mraf_gs_truncI0135/  (4.5mm)
+artifacts/20260511-165932_rtad_mraf_gs_truncI0135/  (5.0mm)
+artifacts/20260511-165943_rtad_mraf_gs_truncI0135/  (6.0mm)
+artifacts/20260511-160944_rtad_mraf_gs_truncI0135/  (7.0mm)
+```
 
 ---
 
