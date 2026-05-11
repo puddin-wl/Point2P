@@ -1,0 +1,42 @@
+{
+  "file": "E:\\program\\Point2P\\lab_test_f300mm\\captured_2.mat",
+  "variable": "snapshot2",
+  "image_shape": [
+    2048,
+    2448
+  ],
+  "flat_center_px": [
+    1372.5,
+    1050.5
+  ],
+  "flat_bbox_px": [
+    84.0,
+    36.0
+  ],
+  "size50_px": [
+    92.0,
+    35.0
+  ],
+  "size13p5_px": [
+    107.0,
+    42.0
+  ],
+  "size90_px": [
+    8.0,
+    27.0
+  ],
+  "transition_px": [
+    49.5,
+    7.5
+  ],
+  "aspect_ratio": 2.6285714285714286,
+  "scale_um_per_px": [
+    3.5869565217391304,
+    3.4285714285714284
+  ],
+  "flat_mean": 154.25962264150942,
+  "rms_nonuniformity_percent": 22.332795521565632,
+  "peak_to_valley_percent": 115.38988424317739,
+  "min_over_mean": 0.4991584880182393,
+  "saturated_percent": 0.37735849056603776
+}

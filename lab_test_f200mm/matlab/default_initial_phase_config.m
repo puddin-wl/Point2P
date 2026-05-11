@@ -14,14 +14,14 @@ cfg.module_root = module_root;
 
 % Optical constants.
 cfg.lambda_m = 532e-9;
-cfg.f_m = 300e-3;
+cfg.f_m = 200e-3;
 
 % Clear aperture / pupil. This is not the illuminated Gaussian diameter.
 cfg.aperture_diameter_m = 15e-3;
 cfg.aperture_radius_m = cfg.aperture_diameter_m / 2;
 
 % Illuminated input Gaussian beam. Diameter is at 1/e^2 intensity.
-cfg.input_1e2_diameter_m = 6e-3;
+cfg.input_1e2_diameter_m = 5e-3;
 cfg.input_1e2_radius_m = cfg.input_1e2_diameter_m / 2;
 cfg.input_1e_radius_m = cfg.input_1e2_radius_m / sqrt(2);
 

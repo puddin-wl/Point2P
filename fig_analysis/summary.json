@@ -1,0 +1,36 @@
+{
+  "image_shape": [
+    2048,
+    2448
+  ],
+  "flat_center_px": [
+    1370.5,
+    1050.5
+  ],
+  "flat_bbox_px": [
+    47.0,
+    31.0
+  ],
+  "size50_px": [
+    91.0,
+    35.0
+  ],
+  "size13p5_px": [
+    107.0,
+    43.0
+  ],
+  "size90_px": [
+    8.0,
+    26.0
+  ],
+  "transition_px": [
+    49.5,
+    8.5
+  ],
+  "aspect_ratio": 2.6,
+  "flat_mean": 195.40688575899844,
+  "flat_rms_percent": 10.593650212172907,
+  "peak_to_valley_percent": 45.545989668842346,
+  "flat_min": 166.0,
+  "flat_max": 255.0
+}
