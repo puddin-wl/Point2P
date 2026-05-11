@@ -34,6 +34,7 @@ lab_test_f300mm/artifacts/
 lab_test_f200mm/artifacts/
 lab_test_f200mm/make_phase0_output*/
 fig_analysis/input/
+lab_wgs/artifacts/
 truncated_beam_phase/artifacts/
 
 # Python bytecode
