@@ -77,12 +77,15 @@ def save_slm_phase(
     y1 = y0 + crop_h
     phase_cropped = phase[y0:y1, x0:x1]
 
-    # Resample to SLM resolution
+    # Resample using complex field interpolation (continuous across 2π wraps)
     zoom_y = slm_h / crop_h
     zoom_x = slm_w / crop_w
     print(f"Resampling {crop_w}×{crop_h} → {slm_w}×{slm_h} (zoom {zoom_x:.4f}x, {zoom_y:.4f}x)")
 
-    phase_slm = zoom(phase_cropped, (zoom_y, zoom_x), order=3)
+    complex_field = np.exp(1j * phase_cropped)
+    real_part = zoom(complex_field.real, (zoom_y, zoom_x), order=3)
+    imag_part = zoom(complex_field.imag, (zoom_y, zoom_x), order=3)
+    phase_slm = np.arctan2(imag_part, real_part)
 
     # Wrap to [0, 2π) and convert to 8-bit
     phase_slm = np.mod(phase_slm, 2.0 * np.pi)
