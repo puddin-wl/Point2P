@@ -1,0 +1,45 @@
+{
+  "file": "E:\\program\\Point2P\\fig_analysis\\input\\captured_image_511_1716.mat",
+  "variable": "snapshot1",
+  "image_shape": [
+    2048,
+    2448
+  ],
+  "background": 3.0,
+  "background_std": 0.6266725152406356,
+  "flat_bbox_px": [
+    155,
+    94
+  ],
+  "flat_center_px": [
+    1939.3672093623984,
+    958.9543450339394
+  ],
+  "size50_px": [
+    104.0,
+    40.0
+  ],
+  "size13p5_px": [
+    109.0,
+    44.0
+  ],
+  "size90_px": [
+    98.0,
+    34.0
+  ],
+  "transition_px": [
+    5.5,
+    5.0
+  ],
+  "aspect_ratio": 2.6,
+  "flat_mean": 109.66145372282875,
+  "flat_std": 111.54003045187352,
+  "rms_percent": 101.71306932862016,
+  "pv_percent": 227.9743624700429,
+  "saturated_percent": 34.395593587095505,
+  "pixel_um": 3.45,
+  "size50_um": [
+    358.8,
+    138.0
+  ]
+}

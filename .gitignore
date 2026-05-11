@@ -32,7 +32,8 @@ real_world_simulation/test_divergence_fine.py
 lab_test_f100mm/artifacts/
 lab_test_f300mm/artifacts/
 lab_test_f200mm/artifacts/
-lab_test_f200mm/make_phase0_output/
+lab_test_f200mm/make_phase0_output*/
+fig_analysis/input/
 truncated_beam_phase/artifacts/
 
 # Python bytecode
