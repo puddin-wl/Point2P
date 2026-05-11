@@ -1,193 +1,259 @@
-# lab_wgs — 实验反馈 WGS 在线优化
+# lab_wgs — 实验反馈 WGS 在线优化（全 MATLAB 实现）
 
 ## 概述
 
-仿真 WGS（Stage 2）用 FFT 模拟焦面强度来更新相位。实验 WGS 用**真实的相机图像**
-替代仿真：每次迭代把相位加载到 SLM 上，用相机拍下实际焦面光斑，分析图像得到
-平顶均匀性，再反传更新相位。这是一个**闭环实验优化**。
+仿真 WGS 用 FFT 模拟焦面强度。实验 WGS 把相位加载到 SLM 上，用相机拍下**真实的**
+焦面光斑，分析实测强度来更新 WGS 权重，再通过 FFT 反传更新相位。全流程用 MATLAB。
 
 ```
-┌─────────────┐     ┌──────────┐     ┌──────────┐     ┌──────────────┐
-│ Python 计算  │ ──→ │ MATLAB   │ ──→ │   SLM    │ ──→ │  光学系统    │
-│ WGS 权重更新 │     │ 加载相位 │     │ 显示相位 │     │  透镜+DOE    │
-│ 反传+相位提取│     └──────────┘     └──────────┘     └──────┬───────┘
-└──────┬──────┘                                              │
-       │                                              ┌──────▼───────┐
-       │                                              │   相机成像   │
-       │                                              └──────┬───────┘
-       │                                              ┌──────▼───────┐
-       │                                              │ MATLAB snap  │
-       └──────────────────────────────────────────────│ 保存 .mat    │
-                                                      └──────────────┘
+┌──────────┐     ┌──────────┐     ┌───────────┐
+│ MATLAB   │ ──→ │   SLM    │ ──→ │  光学系统  │
+│ 相位→PNG │     │ 显示相位 │     │  透镜+DOE  │
+└────┬─────┘     └──────────┘     └─────┬─────┘
+     │                                  │
+     │                            ┌─────▼─────┐
+     │                            │  相机成像  │
+     │                            └─────┬─────┘
+     │                            ┌─────▼─────┐
+     │                            │ Image Acq │
+     │                            │ getsnapshot│
+     └────────────────────────────│  .mat     │
+                                  └──────┬────┘
+                                         │
+┌─────────────┐                           │
+│ MATLAB WGS  │◄──────────────────────────┘
+│ 权重更新    │
+│ FFT 反传    │
+│ 相位提取    │
+└─────────────┘
 ```
 
-## 与仿真 WGS 的区别
+## 为什么全用 MATLAB
 
-| | 仿真 WGS（Stage 2） | 实验 WGS（Stage 5） |
-|---|---|---|
-| 前向传播 | FFT（计算） | 真实光路 + 相机 |
-| 后向传播 | FFT（计算） | FFT（计算，复用现有代码） |
-| 输入振幅 | 理想高斯模型 | 实际光束（含像差、不对准等） |
-| 收敛判断 | 仿真 RMS | 相机图像 RMS |
-| 迭代速度 | ~0.015s/iter（GPU） | 受限于 SLM 刷新+相机曝光（~0.5-2s/iter） |
+- **SLM**：`SecondDll.dll` 的 `calllib` 接口是 MATLAB 原生支持的
+- **相机**：使用 MATLAB Image Acquisition Toolbox（`videoinput` / `getsnapshot`），Python 没有等价库
+- **FFT**：MATLAB 的 `fft2` / `ifft2` 与 Python CuPy 版本等价，虽然慢一些但足够用
+- **一致性**：硬件控制、图像处理、WGS 计算都在同一个环境，避免语言间数据传递的麻烦
 
-关键优势：实验 WGS 自动补偿所有**仿真中未建模的误差**（光路不对准、光束像差、
-SLM 非线性响应、光学元件瑕疵等）。
+## 算法
 
-## 硬件接口
+### 与仿真 WGS 的对应关系
 
-当前硬件控制代码位于 `basic/`：
-
-| 文件 | 功能 |
-|------|------|
-| `basic/CallDemon.m` | SLM 控制：通过 `SecondDll.dll` 在 1920×1080 窗口显示图像 |
-| `basic/snap.mlx` | 相机采集：触发相机拍摄，保存图像数据 |
-
-SLM 关键 API（来自 `SecondDll.dll`）：
-```matlab
-% 显示单张图片
-calllib('SecondDll', 'saShowImageFromFilePath', 'phase.png', 0, 0, 0, 1920, 1080, 1);
-
-% 带超时控制的窗口（适合自动化循环）
-calllib('SecondDll', 'Timeout_CreateWindow');
-calllib('SecondDll', 'Timeout_ShowWindow', 1);
-calllib('SecondDll', 'Timeout_ShowImageFromFilePath', 'phase.png', 0, 0, 0, 1920, 1080, 1, 2000);
-calllib('SecondDll', 'Timeout_CloseWindow');
+仿真 WGS（Python）：
+```
+E_doe = A_input × exp(iφ)  →  FFT  →  E_focal  →  |E_focal|² = I_sim
+W_new = W_old × (I_target / I_sim)^α
+E_doe_new = IFFT( W × A_target × exp(i×angle(E_focal)) )
+φ_new = angle(E_doe_new)
 ```
 
-## 算法流程
-
-每次迭代：
-
+实验 WGS（MATLAB）：
 ```
-1. Python 保存当前相位为 1920×1080 PNG（复用 save_slm_phase.py）
-2. 调用 MATLAB 脚本：
-   a. 加载 PNG 到 SLM（CallDemon）
-   b. 等待 SLM 稳定（~100ms）
-   c. 触发相机拍照（snap）
-   d. 保存图像为 captured.mat
-3. Python 加载 captured.mat
-4. 用梯度边缘法分析图像（复用 fig_analysis/analyze_captured.py）：
-   - 找平顶区域中心
-   - 提取中心剖面
-   - 计算 size50, RMS 均匀性
-5. 如果收敛（RMS < 阈值 或 迭代耗尽）→ 结束
-6. 用实测强度替代仿真强度，计算 WGS 权重更新
-7. 反传（FFT）→ 提取新相位 → 回到步骤 1
+E_doe = A_input × exp(iφ)  →  FFT  →  E_focal  →  angle(E_focal)  ← 保留相位
+                                                              ↓
+                           SLM显示  →  相机拍照  →  I_meas  ← 实测强度
+                                                              ↓
+W_new = W_old × (I_target / I_meas)^α                        ↓
+E_doe_new = IFFT( W × A_target × exp(i×angle(E_focal)) )  ←──┘
+φ_new = angle(E_doe_new)
 ```
 
-## 需要新建的文件
+关键：**实测强度替代仿真强度，FFT 相位保留使用**。相机只能测强度不能测相位，
+所以仿真 FFT 仍然需要跑——它提供焦面的相位信息用于反传。
+
+### 单次迭代流程
+
+```
+1. E_doe = A_input × exp(i × φ_k)          % DOE 面复振幅
+2. E_focal_sim = fftshift(fft2(ifftshift(E_doe)))  % FFT 得焦面复振幅（含相位）
+3. φ_focal = angle(E_focal_sim)            % 保留仿真相位
+
+4. 把 φ_k 转为 PNG，加载到 SLM              % 硬件显示
+5. 相机拍照 → img_raw                       % 硬件采集
+6. I_meas = analyze_image(img_raw)          % 梯度边缘法提取平顶区域强度
+   - 找平顶中心
+   - 背景扣除、归一化
+   - 坐标映射（相机像素 → 焦面 μm）
+   - 裁剪到 target 对应的焦面区域
+
+7. W_k = W_{k-1} × (I_target ./ I_meas).^α  % WGS 权重更新
+   W_k = clip(W_k, w_min, w_max)            % 限幅
+
+8. E_focal_corrected = W_k .* A_target .* exp(i × φ_focal)  % 加权目标
+9. E_doe_new = fftshift(ifft2(ifftshift(E_focal_corrected))) % 反传
+10. φ_{k+1} = mod(angle(E_doe_new), 2π)     % 提取新相位，包裹到 [0, 2π)
+```
+
+步骤 6 是实验 WGS 最核心的新增功能。步骤 3 的仿真相位只参与步骤 8 的反传，
+实测数据只贡献强度——两者结合的混合场才是物理上正确的反传输入。
+
+## 文件结构
 
 ```
 lab_wgs/
-  basic/                         # 硬件控制（用户已提供）
-    CallDemon.m                  # SLM DLL 封装
-    snap.mlx                     # 相机采集
-  
-  run_experimental_wgs.py        # 主循环：协调 SLM/相机/WGS 迭代
-  matlab_bridge.py               # Python ↔ MATLAB 桥接
-  camera_analysis.py             # 相机图像→平顶强度分布 的转换
-  experimental_wgs_config.py     # 实验 WGS 配置参数
-  display_phase.m                # MATLAB：接收相位 PNG，加载到 SLM
-  capture_image.m                # MATLAB：触发相机，保存 .mat
-  
-  artifacts/                     # 运行时输出（gitignored）
+  basic/                            # 硬件控制（用户已提供）
+    CallDemon.m                     # SLM DLL 封装
+    snap.mlx                        # 相机采集（Image Acquisition）
+
+  experiments_wgs_config.m          # 配置参数：波长、焦距、光束直径、target、WGS超参
+
+  % ---- 初始化 ----
+  load_input_amplitude.m            # 生成输入高斯振幅 A_input（复用 RD 初始相位逻辑）
+  load_initial_phase.m              # 从 .mat 加载 phase0 或 phase_refined
+
+  % ---- 硬件交互 ----
+  display_slm_phase.m               # 相位数组 → PNG → CallDemon 显示到 SLM
+  capture_focal_image.m             # 调用 Image Acquisition 拍照，返回 uint8 图像
+
+  % ---- 图像分析（核心新增） ----
+  analyze_captured_image.m          # 梯度边缘法定位平顶、提取实测强度 I_meas
+  map_camera_to_focal.m             # 相机像素坐标 → 焦面物理坐标（μm）
+
+  % ---- WGS 迭代 ----
+  wgs_iteration.m                   # 一次迭代：仿真FFT + 权重更新 + 反传
+  run_experimental_wgs.m            # 主循环：显示→拍照→分析→WGS→重复
+
+  % ---- 工具 ----
+  save_phase_png.m                  # 相位数组 → 1920×1080 8-bit PNG（等同 save_slm_phase.py）
+  load_phase_mat.m                  # 读取 phase_refined.mat / phase0.mat
+
+  artifacts/                        # 运行时输出（gitignored）
+    <timestamp>_expwgs/
+      phase_001.png ... phase_N.png # 每轮 SLM 相位
+      captured_001.mat ...          # 每轮相机图像
+      I_meas_001.mat ...            # 提取的实测强度
+      metrics.csv                   # 每轮 RMS / size50
+      phase_final.mat               # 最终相位
 ```
 
-### `matlab_bridge.py` — 核心桥接逻辑
+## 各模块详细设计
 
-```python
-# 方案 A：通过命令行调用 MATLAB
-subprocess.run([
-    'matlab', '-batch',
-    f"cd {PROJECT_DIR}; display_phase('{png_path}'); capture_image('{out_mat}')"
-])
+### `analyze_captured_image.m` — 图像→强度分布
 
-# 方案 B：Python 写 PNG → MATLAB 监控文件夹 → 自动执行
-# （适合 MATLAB 已打开 GUI 的情况）
+输入：相机原始图像 (2048×2448 uint8)
+输出：I_meas — 映射到焦面坐标的归一化强度分布
+
+步骤：
+1. **背景估计**：取图像四角 30×30 区域，中值 = 背景
+2. **寻找亮区**：img > bg + 5*std → 连通域 → 取最大 → 亮度加权质心
+3. **梯度边缘定位**：
+   - 过质心取 x/y 中心剖面，平滑 (窗口=7)
+   - 计算梯度，找中心两侧最强梯度峰 → 边缘位置 lx, rx, ly, ry
+   - 平顶参考电平 = 边缘间剖面中值
+4. **尺寸测量**：以平顶电平为参考，线性插值找 50%/90%/13.5% 交叉点
+5. **坐标映射**：
+   - 已知靶面尺寸 (330×120 μm)，size50 的像素值 → μm/px 标定
+   - 将图像裁剪/重采样到仿真焦面网格 (N=2048, dx=2.5μm)
+6. **强度归一化**：I_meas = (img - bg) / flat_level → 平顶区域均值≈1
+
+```matlab
+function [I_meas, metrics] = analyze_captured_image(img, target_params)
+    % target_params: W50_um=330, H50_um=120, pixel_um=3.45
+    % I_meas: 归一化焦面强度，尺寸匹配仿真网格
+    % metrics: size50, RMS, hotspot_ratio 等
 ```
 
-具体方案取决于实验电脑上 MATLAB 的使用方式（命令行 vs GUI）。
+### `display_slm_phase.m` — 相位显示到 SLM
 
-### `camera_analysis.py` — 从相机图像提取平顶强度分布
+```matlab
+function display_slm_phase(phase_rad, slm_width, slm_height)
+    % phase_rad: 2048×2048, [0, 2π)
+    % 1. 裁剪中心区域 → 重采样到 slm_width×slm_height
+    % 2. 复振幅插值（避免包裹跳变）
+    % 3. 量化到 8-bit → 保存为临时 PNG
+    % 4. CallDemon 加载 PNG 到 SLM
+```
 
-关键步骤：
-1. **平顶定位**：梯度边缘法找到矩形亮区（复用 `fig_analysis/analyze_captured.py`）
-2. **背景扣除**：用图像四角估计背景，减去
-3. **归一化**：以平顶区域中值为 1 做归一化
-4. **坐标映射**：相机像素坐标 → 焦面物理坐标（μm）
-5. **裁剪**：提取 target 对应的焦面区域，作为 WGS 的 "测量强度"
-6. **遮挡处理**：相机图像中被 SLM 边框或其他遮挡物影响的区域需标记
+### `wgs_iteration.m` — 核心 WGS 一步
 
-## 关键挑战与对策
+```matlab
+function [phase_new, weights_new, metrics] = wgs_iteration(phase, weights, ...
+    A_input, I_target, A_target, I_meas, cfg)
+    % phase: 当前 DOE 相位
+    % I_meas: 相机实测的焦面强度（已配准到仿真网格）
+    % 
+    % 1. E_focal_sim = FFT(A_input .* exp(1i*phase))  → φ_focal
+    % 2. weights_new = weights .* (I_target ./ I_meas).^α, clip
+    % 3. E_corrected = weights_new .* A_target .* exp(1i*φ_focal)
+    % 4. phase_new = angle(IFFT(E_corrected)), wrap to [0,2π)
+```
 
-### 1. 坐标对齐
-相机图像中的平顶位置每轮可能漂移。对策：
-- 每轮自动检测平顶中心（梯度边缘法已支持）
-- 以检测到的中心为基准裁剪 target 区域
-- 如果漂移过大（>20μm），报警提示重新对准
+### `run_experimental_wgs.m` — 主循环
 
-### 2. 曝光控制
-过曝图像无法用于 WGS 更新。对策：
-- 每轮检查饱和像素比例
-- 如果饱和 >1%，自动降低相机曝光或等待用户调整激光功率
-- 初始几轮可先用低功率"对准模式"
+```matlab
+function run_experimental_wgs(phase0_path, cfg)
+    % 初始化
+    phase = load_initial_phase(phase0_path);
+    A_input = load_input_amplitude(cfg);
+    [I_target, A_target] = build_rtad_target(cfg);  % 复用现有 target 逻辑
+    weights = ones(size(I_target));
+    
+    for iter = 1:cfg.max_iters
+        % 显示
+        display_slm_phase(phase, 1920, 1080);
+        pause(0.2);  % SLM 稳定
+        
+        % 采集
+        img = capture_focal_image();
+        
+        % 分析
+        [I_meas, m] = analyze_captured_image(img, cfg);
+        
+        % 记录
+        fprintf('[%d] RMS=%.2f%%  size50=%.0fx%.0f um\n', ...
+            iter, m.rms_pct, m.size50_x_um, m.size50_y_um);
+        
+        % 收敛判断
+        if m.rms_pct < cfg.rms_target, break; end
+        
+        % WGS 迭代
+        [phase, weights] = wgs_iteration(phase, weights, ...
+            A_input, I_target, A_target, I_meas, cfg);
+    end
+    
+    save(fullfile(cfg.out_dir, 'phase_final.mat'), 'phase', 'weights');
+end
+```
 
-### 3. 散斑噪声
-相机图像有散斑噪声，直接用于 WGS 会导致权重震荡。对策：
-- 每个相位拍 3-5 张取平均（如果 SLM 和相机支持）
-- 在 WGS 权重更新前对图像做轻度高斯平滑（σ=1-2 px）
+## WGS 参数建议
 
-### 4. SLM 相位响应
-SLM 的灰度-相位映射可能不是严格线性的。对策：
-- 实验 WGS 不需要知道绝对相位值——相位更新是相对的（从当前相位出发）
-- 非线性响应会被 WGS 迭代自动补偿
+沿用仿真 WGS 的经验：
 
-### 5. 收敛判据
-仿真 RMS 和实验 RMS 数值不可直接比较。对策：
-- 以实验 RMS 的相对变化为判据：连续 5 轮 RMS 变化 < 0.01% → 收敛
-- 设置最大迭代次数（建议 30-50 轮，受限于实验时间）
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| wgs_feedback_exponent | 0.8 | 实测噪声比仿真大，可以稍微降一点（0.5-0.8） |
+| wgs_weight_min / max | 0.5 / 1.5 | 沿用仿真设置 |
+| bg_factor | 0.9 | 轻度背景衰减 |
+| max_iters | 30-50 | 实验迭代慢，不可能跑 200 轮 |
+| rms_target | 2% | 实验 RMS 通常会比仿真高 |
+
+注意：实验 WGS 的 RMS 和仿真 WGS 的 RMS 不可直接对比——实验 RMS 包含了
+相机噪声、散斑、杂散光等仿真中没有的因素。合理的实验 RMS 目标可能是 2-5%。
 
 ## 实施步骤
 
-### Step 1：验证硬件链路
-```matlab
-% MATLAB 中手动测试
-loadlibrary('SecondDll.dll', 'SecondDll.h');
-calllib('SecondDll', 'Timeout_CreateWindow');
-calllib('SecondDll', 'Timeout_ShowWindow', 1);
-calllib('SecondDll', 'Timeout_ShowImageFromFilePath', 'slm_phase_f200mm_d5mm.png', ...
-    0, 0, 0, 1920, 1080, 1, 2000);
-% 肉眼确认 SLM 上显示了正确的相位图
-% 运行 snap 确认相机能拍到焦面光斑
-```
+### Step 1：基础验证
+- 在 MATLAB 中手动加载一张 SLM 相位 PNG，拍照，确认能看到平顶光斑
+- 验证 `analyze_captured_image` 能正确定位和测量
 
-### Step 2：建立 Python→MATLAB 通信
-确认 Python 能调用 MATLAB 执行 SLM 显示和相机采集。
+### Step 2：单轮闭环
+- 跑一轮完整的：显示相位 → 拍照 → 分析 → WGS 更新 → 得到新相位
+- 对比新旧相位的差异
 
-### Step 3：单次闭环测试
-跑一轮：加载相位 → 拍照 → 分析 → 更新相位 → 对比新旧相位。
+### Step 3：多轮迭代
+- 跑 30 轮，观察 RMS 是否收敛
+- 如果震荡，降低 `wgs_feedback_exponent`
+- 如果不动，检查坐标映射是否正确
 
-### Step 4：多轮迭代
-跑完整的实验 WGS 循环，观察 RMS 收敛曲线。
+### Step 4：对比评估
+- 将实验 WGS 最终相位与仿真 WGS 最终相位对比
+- 将两者都加载到 SLM 上拍照，直接对比焦面光斑
 
-### Step 5：对比仿真结果
-将实验 WGS 的最终相位与仿真 WGS 的最终相位对比，分析差异来源。
+## 关键注意事项
 
-## 与现有管线的衔接
-
-实验 WGS 的输入是仿真 WGS 的输出（`phase_refined.npy`）。
-实验 WGS 的输出是一个经过真实光路验证/修正的相位。
-
-```bash
-# Step 1: 仿真 WGS（已有）
-cd lab_test_f200mm
-python run_rtad_mraf_gs_case.py ...  # 得到 phase_refined.npy
-
-# Step 2: 转为 SLM PNG
-python save_slm_phase.py artifacts/.../phase_refined.npy --out slm_initial.png
-
-# Step 3: 实验 WGS（新建）
-cd lab_wgs
-python run_experimental_wgs.py --phase slm_initial.png --beam 5.5 --iters 30
-```
+1. **曝光**：每轮检查饱和像素，饱和 >1% 时暂停并提示调整激光/曝光
+2. **坐标对齐**：每轮自动检测平顶位置，如果漂移 >20μm 报警
+3. **散斑**：如果条件允许，每个相位拍 3 张取平均；或加大分析时的平滑窗口
+4. **SLM 灰度响应**：不需要知道绝对映射关系，WGS 权重更新是相对的
+5. **FFT 复用**：反传用的 FFT 可以用 CPU（MATLAB 内置），不需要 GPU。2048×2048
+   的 FFT 在 MATLAB 中约 0.05-0.1 秒，不是瓶颈（硬件时间远大于此）
