@@ -7,11 +7,12 @@
 ```
 Point2P/
 ├── initial_phase_generation/     # Stage 1: Romero-Dickey 初始相位生成 (MATLAB)
-├── lab_test_f200mm/              # 标准管线参考实现 (f=200mm, Python)
-├── lab_test_f100mm/              # f=100mm 焦距变体
-├── lab_test_f300mm/              # f=300mm 焦距变体
+├── lab_test/
+│   ├── lab_test_f200mm/          # 标准管线参考实现 (f=200mm)
+│   ├── lab_test_f100mm/          # f=100mm 焦距变体
+│   ├── lab_test_f300mm/          # f=300mm 焦距变体
+│   └── lab_wgs/                  # Stage 5: 实验反馈 WGS 在线优化 (MATLAB)
 ├── rtad_mraf_gs_python/          # 原始基线 (f=429mm, Python)
-├── lab_wgs/                      # Stage 3: 实验反馈 WGS 在线优化 (MATLAB)
 ├── real_world_simulation/        # 容差评估：固定相位、扫入射/光路误差
 ├── fig_analysis/                 # 捕获光斑图像分析（梯度边缘法）
 ├── result_diagnostics/           # 焦平面结果诊断 (MATLAB)
@@ -29,8 +30,8 @@ Point2P/
 
 Romero-Dickey 解析法：在高斯光束与矩形平顶之间求解稳相能量守恒，得到可分离的 DOE 初始相位。
 
-- MATLAB：`lab_test_f200mm/matlab/run_initial_phase_generation`
-- Python（无需 MATLAB）：`lab_test_f200mm/make_phase0.py --beam 7`
+- MATLAB：`lab_test/lab_test_f200mm/matlab/run_initial_phase_generation`
+- Python（无需 MATLAB）：`lab_test/lab_test_f200mm/make_phase0.py --beam 7`
 - 输出：`phase0.mat`（2048×2048, [0, 2π)）
 
 ### Stage 2 — 仿真 WGS 精修
@@ -39,7 +40,7 @@ Romero-Dickey 解析法：在高斯光束与矩形平顶之间求解稳相能量
 
 ```bash
 conda activate slmrtad
-cd lab_test_f200mm
+cd lab_test/lab_test_f200mm
 
 python run_rtad_mraf_gs_case.py \
     --phase-mat make_phase0_output/phase0.mat \
@@ -75,7 +76,7 @@ c = np.exp(1j * phase_cropped)
 phase_slm = np.arctan2(zoom(c.imag, ...), zoom(c.real, ...))
 ```
 
-详见 `lab_test_f200mm/README.md` Stage 3 章节。
+详见 `lab_test/lab_test_f200mm/README.md` Stage 3 章节。
 
 ### Stage 4 — 光斑图像分析
 
@@ -87,13 +88,13 @@ python fig_analysis/analyze_captured.py <image.mat/.bmp/.png/.tif> --pixel-um 3.
 
 ### Stage 5 — 实验反馈 WGS（最新）
 
-仿真 WGS 之后，用真实光路反馈跑实验 WGS，补偿仿真中未建模的误差（光路不对准、SLM 非线性、杂散光等）。这是纯 MATLAB 实现，放在 `lab_wgs/` 中。
+仿真 WGS 之后，用真实光路反馈跑实验 WGS，补偿仿真中未建模的误差（光路不对准、SLM 非线性、杂散光等）。这是纯 MATLAB 实现，放在 `lab_test/lab_wgs/` 中。
 
 核心思路是混合场 WGS：前向传播走真实光路（SLM→相机→实测强度），反传走仿真 FFT（提供仿真相位 + 实测强度拼成焦面复振幅）。
 
 **不能跳过仿真 WGS 直接从随机相位做实验 WGS**——散斑状态拍不到平顶，梯度边缘法找不到矩形亮区，WGS 没有有效反馈信号。仿真 WGS 是必须的热启动。
 
-详见 `lab_wgs/readme.md`。
+详见 `lab_test/lab_wgs/readme.md`。
 
 ## 各焦距结果汇总
 
