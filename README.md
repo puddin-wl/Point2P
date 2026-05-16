@@ -16,6 +16,7 @@ Point2P/
 ├── fig_analysis/                 # 捕获光斑图像分析（梯度边缘法）
 ├── result_diagnostics/           # 焦平面结果诊断 (MATLAB)
 ├── truncated_beam_phase/         # 截断光束相位模块
+├── dmd_phase/                    # DMD 超像素相位转换 (192×192, 54.8µm)
 ├── presentation/                 # 项目汇报 Beamer PDF
 └── target/                       # 目标图形定义
 ```
@@ -118,6 +119,24 @@ python fig_analysis/analyze_captured.py <image.mat/.bmp/.png/.tif> --pixel-um 3.
 - **X-only 不需要**：flat_local 的 2D 局部权重已足够；引入 X-only 会过早冻结 Y，损害均匀性
 - **复振幅插值**：SLM 相位转换必须对 `exp(iφ)` 插值，不能直接对包裹相位插值
 - **曝光**：相机峰值 ~200（8-bit），留足余量，避免饱和像素
+
+## DMD 参数
+
+实验室 DMD（数字微镜器件）用于相位加载，参数如下：
+
+| 参数 | 值 |
+|------|-----|
+| 像元尺寸 | 13.7 µm |
+| 原始分辨率 | 1024×768 |
+| 有效区域（方形） | 768×768 |
+| 超像素 | 4×4 mirrors |
+| 超像素分辨率 | **192×192** |
+| 超像素尺寸 | **54.8 µm** (4×13.7) |
+| 物理面积 | 10.52×10.52 mm |
+
+与 SLM（1920×1080, 6.4 µm）不同，DMD 通过 4×4 超像素编码相位，每个超像素对应一个相位值。计算 DOE 相位（2048×2048, dx_doe）通过裁剪中心 10.52 mm 区域 + 复振幅插值映射到 192×192。
+
+转换工具：`dmd_phase/convert_to_dmd.py`。
 
 ## 基线
 
