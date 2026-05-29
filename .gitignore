@@ -41,6 +41,9 @@ truncated_beam_phase/artifacts/
 __pycache__/
 *.pyc
 
+# Large archives
+*.zip
+
 # MATLAB transient files
 *.asv
 *.m~
