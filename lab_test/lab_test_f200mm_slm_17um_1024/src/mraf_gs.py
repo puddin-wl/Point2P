@@ -1,20 +1,16 @@
-"""Simplified GS/MRAF/WGS refinement loop for RTAD flat-top targets.
+"""WGS flat_local refinement for RTAD flat-top targets — 唯一活跃代码路径.
 ---
-GS (Gerchberg-Saxton) / MRAF (Mixed-Region Amplitude Freedom) / WGS (Weighted GS)
-三种方法的统一迭代优化引擎。
+迭代流程 (method=wgs, strategy=flat_local):
+  1. DOE → 焦面 (FFT 前向传播)
+  2. mask_flat 内 2D 局部权重反馈: w ← w × (mean|E_flat| / |E|)^exponent
+  3. MRAF 焦面投影: signal=加权目标, free×mraf_factor, bg×bg_factor
+  4. 焦面 → DOE (IFFT 反传), 提取包裹相位
+  5. 指标记录
 
-MRAF 投影公式:
-  - signal 像素:  E' = target_amp × exp(i × angle(E))
-  - free 像素:    E' = mraf_factor × E        (mraf_factor=0 则完全衰减)
-  - far_bg 像素:  E' = E (keep) / bg_factor×E (attenuate) / 0 (zero)
-
-WGS 权重更新 (仅在 mask_flat 内):
-  w ← w × (mean(|E_flat|) / |E_map|)^exponent
-  然后 clip 到 [min, max], 可选归一化。
-
-WGS 策略:
-  - flat_local: 2D mask_flat 上做局部权重反馈 (默认, 最优)
-  - xy_then_x:  先 2D XY WGS, 再切 X-only (Y 冻结) —— 已弃用
+以下代码路径已用 # 注释 (本管线不使用):
+  - method='gs' / 'mraf' / 'mraf_then_wgs'
+  - wgs_strategy='xy_then_x' (X-only WGS, 已弃用)
+  - _update_x_wgs_weights() / _empty_x_weight_stats()
 """
 
 from __future__ import annotations
@@ -133,14 +129,16 @@ def _wgs_weight_stats(
     return stats
 
 
-def _empty_x_weight_stats() -> dict[str, float]:
-    """返回全 NaN 的 x-only WGS 统计占位."""
-    return {
-        "w_x_mean": float("nan"),
-        "w_x_std": float("nan"),
-        "w_x_min": float("nan"),
-        "w_x_max": float("nan"),
-    }
+# ======== 以下两个函数仅供 xy_then_x 策略使用 (已弃用) ========
+
+# def _empty_x_weight_stats() -> dict[str, float]:
+#     """返回全 NaN 的 x-only WGS 统计占位."""
+#     return {
+#         "w_x_mean": float("nan"),
+#         "w_x_std": float("nan"),
+#         "w_x_min": float("nan"),
+#         "w_x_max": float("nan"),
+#     }
 
 
 def _metrics_row(
@@ -215,54 +213,56 @@ def _update_flat_wgs_weights(
     return weights, True, ""
 
 
-def _update_x_wgs_weights(
-    w_x: Any,
-    farfield_amp: Any,
-    mask_flat: Any,
-    valid_x: Any,
-    flat_counts_x: Any,
-    xp: Any,
-    backend: ArrayBackend,
-    feedback_exponent: float,
-    clip_min: float,
-    clip_max: float,
-    normalize_weights: bool,
-) -> Any:
-    """Update one-dimensional x weights from y-averaged flat-core amplitude.
-
-    For each x column, the current far-field amplitude is averaged over the
-    fixed RTAD ``mask_flat`` rows. The resulting 1D correction is broadcast
-    along y in the projection step, so this stage mainly changes the x profile
-    while freezing the y-direction local structure inherited from XY WGS.
-    """
-    eps = np.float32(1e-12)
-    valid_count = int(np.asarray(backend.to_numpy(xp.count_nonzero(valid_x))).reshape(()))
-    if valid_count == 0:
-        return w_x, False, "x-only WGS update skipped because no valid flat-core x columns exist."
-
-    amp_sum_x = xp.sum(xp.where(mask_flat, farfield_amp, 0), axis=0)
-    amp_x = amp_sum_x / xp.maximum(flat_counts_x, 1)
-    amp_valid = amp_x[valid_x]
-    amp_mean_b = xp.mean(amp_valid)
-    amp_mean = float(np.asarray(backend.to_numpy(amp_mean_b)).reshape(()))
-    if not np.isfinite(amp_mean) or amp_mean <= 0:
-        return w_x, False, f"x-only WGS update skipped because mean x amplitude is {amp_mean}."
-
-    ratio = amp_mean_b / xp.maximum(amp_valid, eps)
-    updated = w_x[valid_x] * xp.power(ratio, float(feedback_exponent))
-    updated = xp.clip(updated, float(clip_min), float(clip_max))
-
-    if normalize_weights:
-        mean_w_b = xp.mean(updated)
-        mean_w = float(np.asarray(backend.to_numpy(mean_w_b)).reshape(()))
-        if np.isfinite(mean_w) and mean_w > 0:
-            updated = updated / mean_w_b
-        else:
-            return w_x, False, f"x-only WGS normalization skipped because mean x weight is {mean_w}."
-
-    w_x[valid_x] = updated
-    w_x[~valid_x] = xp.asarray(1.0, dtype=w_x.dtype)
-    return w_x, True, ""
+# def _update_x_wgs_weights(
+#     w_x: Any,
+#     farfield_amp: Any,
+#     mask_flat: Any,
+#     valid_x: Any,
+#     flat_counts_x: Any,
+#     xp: Any,
+#     backend: ArrayBackend,
+#     feedback_exponent: float,
+#     clip_min: float,
+#     clip_max: float,
+#     normalize_weights: bool,
+# ) -> Any:
+#     """Update one-dimensional x weights from y-averaged flat-core amplitude.
+#
+#     For each x column, the current far-field amplitude is averaged over the
+#     fixed RTAD ``mask_flat`` rows. The resulting 1D correction is broadcast
+#     along y in the projection step, so this stage mainly changes the x profile
+#     while freezing the y-direction local structure inherited from XY WGS.
+#
+#     已弃用 (xy_then_x). X-only WGS 会冻结 Y 方向结构, 损害均匀性。
+#     """
+#     eps = np.float32(1e-12)
+#     valid_count = int(np.asarray(backend.to_numpy(xp.count_nonzero(valid_x))).reshape(()))
+#     if valid_count == 0:
+#         return w_x, False, "x-only WGS update skipped because no valid flat-core x columns exist."
+#
+#     amp_sum_x = xp.sum(xp.where(mask_flat, farfield_amp, 0), axis=0)
+#     amp_x = amp_sum_x / xp.maximum(flat_counts_x, 1)
+#     amp_valid = amp_x[valid_x]
+#     amp_mean_b = xp.mean(amp_valid)
+#     amp_mean = float(np.asarray(backend.to_numpy(amp_mean_b)).reshape(()))
+#     if not np.isfinite(amp_mean) or amp_mean <= 0:
+#         return w_x, False, f"x-only WGS update skipped because mean x amplitude is {amp_mean}."
+#
+#     ratio = amp_mean_b / xp.maximum(amp_valid, eps)
+#     updated = w_x[valid_x] * xp.power(ratio, float(feedback_exponent))
+#     updated = xp.clip(updated, float(clip_min), float(clip_max))
+#
+#     if normalize_weights:
+#         mean_w_b = xp.mean(updated)
+#         mean_w = float(np.asarray(backend.to_numpy(mean_w_b)).reshape(()))
+#         if np.isfinite(mean_w) and mean_w > 0:
+#             updated = updated / mean_w_b
+#         else:
+#             return w_x, False, f"x-only WGS normalization skipped because mean x weight is {mean_w}."
+#
+#     w_x[valid_x] = updated
+#     w_x[~valid_x] = xp.asarray(1.0, dtype=w_x.dtype)
+#     return w_x, True, ""
 
 
 def _make_weighted_target(
@@ -303,10 +303,11 @@ def _project_farfield(
     phase_factor = xp.exp(1j * phase_ff).astype(farfield.dtype, copy=False)
     signal = masks_b.get("mask_signal", masks_b["mask_support"])
 
-    if method == "gs":
-        projected = xp.zeros_like(farfield)
-        projected[signal] = target_amp_eff[signal] * phase_factor[signal]
-        return projected
+    # --- GS 分支 (未使用, 实际只用 MRAF 投影) ---
+    # if method == "gs":
+    #     projected = xp.zeros_like(farfield)
+    #     projected[signal] = target_amp_eff[signal] * phase_factor[signal]
+    #     return projected
 
     projected = farfield.copy()
     projected[signal] = target_amp_eff[signal] * phase_factor[signal]
@@ -453,42 +454,45 @@ def run_refinement(
     valid_x = xp.any(update_region, axis=0)
     flat_counts_x = xp.sum(update_region, axis=0).astype(dtype, copy=False)
 
-    if method_l == "mraf_then_wgs":
-        mraf_count = int(mraf_iters if mraf_iters is not None else (wgs_after_iters if wgs_after_iters > 0 else num_iters))
-        if wgs_strategy_l == "xy_then_x":
-            xy_count = int(wgs_xy_iters)
-            xonly_count = int(wgs_xonly_iters)
-            wgs_count = xy_count + xonly_count
-        else:
-            xy_count = 0
-            xonly_count = 0
-            wgs_count = int(wgs_iters)
-        total_iters = mraf_count + wgs_count
-        if mraf_count < 0 or wgs_count < 0 or total_iters <= 0:
-            raise ValueError("mraf_then_wgs requires non-negative mraf_iters/wgs_iters and at least one total iteration.")
-    else:
-        mraf_count = 0
-        if method_l == "wgs" and wgs_strategy_l == "xy_then_x":
-            xy_count = int(wgs_xy_iters)
-            xonly_count = int(wgs_xonly_iters)
-            wgs_count = xy_count + xonly_count
-            total_iters = wgs_count
-        else:
-            xy_count = 0
-            xonly_count = 0
-            wgs_count = int(num_iters) if method_l == "wgs" else 0
-            total_iters = int(num_iters)
-        if total_iters <= 0:
-            raise ValueError("num_iters must be positive.")
-    if xy_count < 0 or xonly_count < 0:
-        raise ValueError("wgs_xy_iters and wgs_xonly_iters must be non-negative.")
+    # ======== 迭代计数 (只用 WGS flat_local, 其他分支已注释) ========
+    mraf_count = 0
+    xy_count = 0
+    xonly_count = 0
+    wgs_count = int(num_iters)
+    total_iters = int(num_iters)
+    #
+    # # --- 已弃用: mraf_then_wgs 两段式 ---
+    # if method_l == "mraf_then_wgs":
+    #     mraf_count = int(mraf_iters if mraf_iters is not None else (wgs_after_iters if wgs_after_iters > 0 else num_iters))
+    #     if wgs_strategy_l == "xy_then_x":
+    #         xy_count = int(wgs_xy_iters)
+    #         xonly_count = int(wgs_xonly_iters)
+    #         wgs_count = xy_count + xonly_count
+    #     else:
+    #         xy_count = 0; xonly_count = 0
+    #         wgs_count = int(wgs_iters)
+    #     total_iters = mraf_count + wgs_count
+    #     ...
+    # else:
+    #     mraf_count = 0
+    #     # --- 已弃用: xy_then_x 策略 ---
+    #     # if method_l == "wgs" and wgs_strategy_l == "xy_then_x":
+    #     #     xy_count = int(wgs_xy_iters)
+    #     #     xonly_count = int(wgs_xonly_iters)
+    #     #     wgs_count = xy_count + xonly_count
+    #     #     total_iters = wgs_count
+    #     # else:
+    #         xy_count = 0; xonly_count = 0
+    #         wgs_count = int(num_iters) if method_l == "wgs" else 0
+    #         total_iters = int(num_iters)
+    #     ...
+    if total_iters <= 0:
+        raise ValueError("num_iters must be positive.")
 
     run_warnings: list[str] = []
-    if wgs_strategy_l == "xy_then_x" and int(wgs_iters) != int(wgs_count):
-        run_warnings.append(
-            f"INFO: wgs_iters={int(wgs_iters)} was ignored because wgs_strategy=xy_then_x uses "
-            f"wgs_xy_iters + wgs_xonly_iters = {wgs_count}."
-        )
+    # # --- 已弃用: xy_then_x 警告 ---
+    # if wgs_strategy_l == "xy_then_x" and int(wgs_iters) != int(wgs_count):
+    #     run_warnings.append(...)
 
     initial_I = _evaluate_phase(phase, input_amp_b, backend)
     initial_I_np = backend.to_numpy(initial_I).astype(np.float32)
@@ -508,190 +512,111 @@ def run_refinement(
         iterator = tqdm(iterator, desc=f"{method_l} refinement", unit="iter")
 
     for it in iterator:
-        local_wgs_it = 0
-        local_x_it = 0
-        do_wgs_xy = False
-        do_wgs_xonly = False
-        if method_l == "mraf_then_wgs":
-            if it <= mraf_count:
-                stage = "mraf"
-                wgs_substage = "mraf"
-            else:
-                stage = "wgs"
-                local_wgs_it = it - mraf_count
-                if wgs_strategy_l == "xy_then_x":
-                    if local_wgs_it <= xy_count:
-                        wgs_substage = "wgs_xy"
-                        do_wgs_xy = True
-                    else:
-                        wgs_substage = "wgs_xonly"
-                        do_wgs_xonly = True
-                        local_x_it = local_wgs_it - xy_count
-                else:
-                    wgs_substage = "wgs_flat_local"
-                    do_wgs_xy = True
-        elif method_l == "wgs":
-            stage = "wgs"
-            local_wgs_it = it
-            if wgs_strategy_l == "xy_then_x":
-                if local_wgs_it <= xy_count:
-                    wgs_substage = "wgs_xy"
-                    do_wgs_xy = True
-                else:
-                    wgs_substage = "wgs_xonly"
-                    do_wgs_xonly = True
-                    local_x_it = local_wgs_it - xy_count
-            else:
-                wgs_substage = "wgs_flat_local"
-                do_wgs_xy = True
-        else:
-            stage = method_l
-            wgs_substage = method_l
+        # ======== WGS flat_local 活跃路径 ========
+        # 以下被注释掉的代码是 method='mraf_then_wgs' / wgs_strategy='xy_then_x' 的
+        # 阶段切换逻辑。当前只用 WGS flat_local:
+        #   stage = "wgs", do_wgs_xy = True, do_wgs_xonly = False
 
+        # # --- 已弃用: mraf_then_wgs 阶段切换 ---
+        # if method_l == "mraf_then_wgs":
+        #     if it <= mraf_count: stage = "mraf" ...
+        #     else: stage = "wgs"; ...
+        #     if wgs_strategy_l == "xy_then_x": ...
+        #     else: do_wgs_xy = True
+        # # elif method_l == "wgs":
+        #     # --- 已弃用: xy_then_x 子分支 ---
+        #     # if wgs_strategy_l == "xy_then_x": ...
+        #     # else: ...
+        # # --- 已弃用: pure GS/MRAF ---
+        # # else: stage = method_l
+
+        stage = "wgs"
+        wgs_substage = "wgs_flat_local"
+        do_wgs_xy = True
+        do_wgs_xonly = False
+
+        # 1. 前向传播
         field = input_amp_b * xp.exp(1j * phase).astype(backend.complex_dtype, copy=False)
         farfield = forward_fft(field, xp)
         farfield_amp = xp.abs(farfield)
 
+        # 2. WGS 权重更新 (每隔 update_every 轮, 活跃路径: 2D flat_local)
         weights_updated = False
-        if do_wgs_xy:
-            update_every = int(wgs_xy_update_every if wgs_strategy_l == "xy_then_x" else wgs_update_every)
-            feedback_exp = float(wgs_xy_feedback_exponent if wgs_strategy_l == "xy_then_x" else wgs_feedback_exponent)
-            clip_min = float(wgs_xy_weight_min if wgs_strategy_l == "xy_then_x" else wgs_weight_min)
-            clip_max = float(wgs_xy_weight_max if wgs_strategy_l == "xy_then_x" else wgs_weight_max)
-            if local_wgs_it > 0 and (local_wgs_it % update_every == 0):
-                wgs_weights_2d, weights_updated, warning_msg = _update_flat_wgs_weights(
-                    wgs_weights_2d,
-                    farfield_amp,
-                    update_region,
-                    xp,
-                    backend,
-                    feedback_exponent=feedback_exp,
-                    clip_min=clip_min,
-                    clip_max=clip_max,
-                    normalize_weights=bool(wgs_normalize_weights),
-                )
-                if warning_msg:
-                    run_warnings.append(f"iteration {it}: {warning_msg}")
-                    warnings.warn(warning_msg, RuntimeWarning, stacklevel=2)
-        elif do_wgs_xonly and local_x_it > 0 and (local_x_it % int(wgs_x_update_every) == 0):
-            w_x, weights_updated, warning_msg = _update_x_wgs_weights(
-                w_x,
-                farfield_amp,
-                update_region,
-                valid_x,
-                flat_counts_x,
-                xp,
-                backend,
-                feedback_exponent=float(wgs_x_feedback_exponent),
-                clip_min=float(wgs_x_weight_min),
-                clip_max=float(wgs_x_weight_max),
-                normalize_weights=bool(wgs_x_normalize),
+        # -- 活跃路径: flat_local WGS --
+        # if do_wgs_xy:  (always True)
+        update_every = int(wgs_update_every)
+        feedback_exp = float(wgs_feedback_exponent)
+        clip_min = float(wgs_weight_min)
+        clip_max = float(wgs_weight_max)
+        if it % update_every == 0:
+            wgs_weights_2d, weights_updated, warning_msg = _update_flat_wgs_weights(
+                wgs_weights_2d, farfield_amp, update_region, xp, backend,
+                feedback_exponent=feedback_exp, clip_min=clip_min, clip_max=clip_max,
+                normalize_weights=bool(wgs_normalize_weights),
             )
             if warning_msg:
                 run_warnings.append(f"iteration {it}: {warning_msg}")
                 warnings.warn(warning_msg, RuntimeWarning, stacklevel=2)
+        # # --- 已弃用: x-only WGS 更新 ---
+        # elif do_wgs_xonly and ...:
+        #     w_x, weights_updated, warning_msg = _update_x_wgs_weights(...)
 
-        if do_wgs_xy:
-            target_eff = _make_weighted_target(
-                base_target,
-                update_region,
-                wgs_weights_2d,
-                w_x,
-                use_weights_2d=True,
-                use_x_weights=False,
-            )
-        elif do_wgs_xonly:
-            target_eff = _make_weighted_target(
-                base_target,
-                update_region,
-                wgs_weights_2d,
-                w_x,
-                use_weights_2d=True,
-                use_x_weights=True,
-            )
-        else:
-            target_eff = base_target
+        # 3. 构建加权目标 (2D weights only, no x-weights)
+        # -- 活跃路径: XY weights ---
+        # if do_wgs_xy:  (always True)
+        target_eff = _make_weighted_target(
+            base_target, update_region, wgs_weights_2d, w_x,
+            use_weights_2d=True, use_x_weights=False,
+        )
+        # # --- 已弃用: x-only 加权 ---
+        # elif do_wgs_xonly: target_eff = _make_weighted_target(..., use_x_weights=True)
+        # # --- 已弃用: 无权重 (纯 GS/MRAF) ---
+        # else: target_eff = base_target
 
-        project_method = "gs" if method_l == "gs" else "mraf"
+        # 4. MRAF 焦面投影 + 反传 + 相位提取
+        # 注意: project_method 在 WGS 路径下始终为 "mraf"
+        # # project_method = "gs" if method_l == "gs" else "mraf"
         projected = _project_farfield(
-            farfield,
-            target_eff,
-            masks_b,
-            xp,
-            method=project_method,
-            mraf_factor=float(mraf_factor),
-            bg_mode=bg_mode,
-            bg_factor=float(bg_factor),
+            farfield, target_eff, masks_b, xp,
+            method="mraf", mraf_factor=float(mraf_factor),
+            bg_mode=bg_mode, bg_factor=float(bg_factor),
         )
         nearfield = backward_fft(projected, xp)
         phase = xp.mod(xp.angle(nearfield), 2.0 * np.pi).astype(dtype, copy=False)
 
-        need_mraf_snapshot = method_l == "mraf_then_wgs" and mraf_count > 0 and it == mraf_count
-        need_xy_snapshot = (
-            method_l in {"mraf_then_wgs", "wgs"}
-            and wgs_strategy_l == "xy_then_x"
-            and xy_count > 0
-            and it == mraf_count + xy_count
-        )
+        # 5. 指标记录
+        # # --- 已弃用: MRAF/XY 阶段快照 ---
+        # need_mraf_snapshot = method_l == "mraf_then_wgs" and ...
+        # need_xy_snapshot = wgs_strategy_l == "xy_then_x" and ...
         need_log = (
             (metrics_interval > 0 and it % metrics_interval == 0)
             or it == total_iters
-            or need_mraf_snapshot
-            or need_xy_snapshot
             or weights_updated
         )
-        I_now = None
-        if need_mraf_snapshot or need_log:
+        if need_log:
             I_now = backend.to_numpy(_evaluate_phase(phase, input_amp_b, backend)).astype(np.float32)
-        if need_mraf_snapshot and I_now is not None:
-            phase_after_mraf = backend.to_numpy(phase).astype(np.float32)
-            reconstruction_after_mraf = I_now
-            mraf_metrics = _metrics_row(
-                I_now,
-                masks,
-                x_um,
-                y_um,
-                iteration=it,
-                stage="mraf",
-                wgs_strategy=wgs_strategy_l,
-                wgs_substage="mraf",
-                weight_stats=_wgs_weight_stats(wgs_weights_2d, update_region, w_x, valid_x, backend),
-            )
-        if need_xy_snapshot and I_now is not None:
-            phase_after_wgs_xy = backend.to_numpy(phase).astype(np.float32)
-            reconstruction_after_wgs_xy = I_now
-            wgs_xy_metrics = _metrics_row(
-                I_now,
-                masks,
-                x_um,
-                y_um,
-                iteration=it,
-                stage="wgs",
-                wgs_strategy=wgs_strategy_l,
-                wgs_substage="wgs_xy",
-                weight_stats=_wgs_weight_stats(wgs_weights_2d, update_region, w_x, valid_x, backend),
-            )
-        if need_log and I_now is not None:
+            # # --- 已弃用: MRAF 快照保存 ---
+            # if need_mraf_snapshot and I_now is not None:
+            #     phase_after_mraf = ...
+            # # --- 已弃用: XY 快照保存 ---
+            # if need_xy_snapshot and I_now is not None:
+            #     phase_after_wgs_xy = ...
             metrics_history.append(
                 _metrics_row(
-                    I_now,
-                    masks,
-                    x_um,
-                    y_um,
-                    iteration=it,
-                    stage=stage,
-                    wgs_strategy=wgs_strategy_l,
-                    wgs_substage=wgs_substage,
+                    I_now, masks, x_um, y_um, iteration=it,
+                    stage=stage, wgs_strategy=wgs_strategy_l, wgs_substage=wgs_substage,
                     weight_stats=_wgs_weight_stats(wgs_weights_2d, update_region, w_x, valid_x, backend),
                 )
             )
 
     refined_I = backend.to_numpy(_evaluate_phase(phase, input_amp_b, backend)).astype(np.float32)
     phase_refined = backend.to_numpy(phase).astype(np.float32)
-    final_stage = "wgs" if method_l in {"wgs", "mraf_then_wgs"} and wgs_count > 0 else method_l
-    final_substage = "wgs_xonly" if wgs_strategy_l == "xy_then_x" and xonly_count > 0 else (
-        "wgs_xy" if wgs_strategy_l == "xy_then_x" and xy_count > 0 else final_stage
-    )
+    # WGS flat_local: stage/substage 固定
+    final_stage = "wgs"
+    final_substage = "wgs_flat_local"
+    # # --- 已弃用: 多阶段/xy_then_x final_substage 逻辑 ---
+    # final_stage = "wgs" if method_l in {"wgs", "mraf_then_wgs"} and wgs_count > 0 else method_l
+    # final_substage = "wgs_xonly" if ... else ("wgs_xy" if ... else final_stage)
     final_weight_stats = _wgs_weight_stats(wgs_weights_2d, update_region, w_x, valid_x, backend)
     final_metrics = _metrics_row(
         refined_I,
