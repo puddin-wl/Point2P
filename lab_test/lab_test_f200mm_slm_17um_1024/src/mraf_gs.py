@@ -188,18 +188,18 @@ def _update_flat_wgs_weights(
     更新后 clip 到 [clip_min, clip_max], 可选均值归一化。
     """
     eps = np.float32(1e-12)
-    amp_flat = farfield_amp[update_region]
+    amp_flat = farfield_amp[update_region] #提取 mask_flat 区域的振幅
     if int(amp_flat.size) == 0:
         return weights, False, "WGS update skipped because mask_flat is empty."
 
-    amp_mean_b = xp.mean(amp_flat)
-    amp_mean = float(np.asarray(backend.to_numpy(amp_mean_b)).reshape(()))
+    amp_mean_b = xp.mean(amp_flat) #计算 mask_flat 区域的平均振幅 (标量)
+    amp_mean = float(np.asarray(backend.to_numpy(amp_mean_b)).reshape(())) #转换为 Python float
     if not np.isfinite(amp_mean) or amp_mean <= 0:
         return weights, False, f"WGS update skipped because flat mean amplitude is {amp_mean}."
 
     ratio = amp_mean_b / xp.maximum(amp_flat, eps)
-    updated = weights[update_region] * xp.power(ratio, float(feedback_exponent))
-    updated = xp.clip(updated, float(clip_min), float(clip_max))
+    updated = weights[update_region] * xp.power(ratio, float(feedback_exponent)) #计算更新的权重
+    updated = xp.clip(updated, float(clip_min), float(clip_max)) #将更新的权重裁剪到 [clip_min, clip_max]
 
     if normalize_weights:
         mean_w_b = xp.mean(updated)
@@ -209,7 +209,7 @@ def _update_flat_wgs_weights(
         else:
             return weights, False, f"WGS weight normalization skipped because mean weight is {mean_w}."
 
-    weights[update_region] = updated
+    weights[update_region] = updated #将更新后的权重写回原数组
     return weights, True, ""
 
 
