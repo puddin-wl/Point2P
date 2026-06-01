@@ -1,0 +1,545 @@
+\documentclass[11pt,a4paper]{ctexart}
+
+% === 页面设置 ===
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{fancyhdr}
+
+% === 代码高亮 ===
+\usepackage{listings}
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{commentgreen}{RGB}{0,128,0}
+\definecolor{keywordblue}{RGB}{0,0,180}
+\definecolor{stringred}{RGB}{180,0,0}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0.5pt,
+  rulecolor=\color{codeframe},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=flexible,
+  keepspaces=true,
+  tabsize=4,
+  showstringspaces=false,
+  commentstyle=\color{commentgreen}\itshape,
+  keywordstyle=\color{keywordblue}\bfseries,
+  stringstyle=\color{stringred},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  xleftmargin=2em,
+  aboveskip=1em,
+  belowskip=1em,
+  language=Python,
+  morekeywords={dtype,float32,uint8,int64,arange,meshgrid,zeros_like,where,exp,sqrt,cos,sin,pi,abs,angle,mean,std,clip,power,maximum,fftshift,ifftshift,fft2,ifft2,arctan2,copy,sum},
+  escapeinside={(*@}{@*)},
+}
+
+% === 页眉页脚 ===
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textbf{代码导读 — RTAD MRAF/GS 管线}}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+
+% === 标题 ===
+\title{\textbf{代码导读\\[0.3em]\large 从初始相位到 SLM 输出的核心算法逐段解释}}
+\author{RTAD MRAF/GS Pipeline}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\vspace{1em}
+
+\begin{abstract}
+\noindent 读完这份文档，你就能理解从初始相位到 SLM 输出的每一行关键代码在做什么。所有代码片段均从本目录的 \texttt{.py} 文件中直接提取。
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ======================================================================
+\section{管线数据流}
+
+整个系统分为三个阶段：
+
+\begin{center}
+\begin{tabular}{ccccc}
+\texttt{make\_phase0.py} & & \texttt{run\_rtad\_mraf\_gs\_case.py} & & \texttt{convert\_to\_slm.py} \\
+(Stage 1) & & (Stage 2) & & (Stage 3) \\[4pt]
+beam=3.8mm & & \texttt{phase0.mat} & & $2048\times2048$ 相位 \\
+$\downarrow$ & & $\downarrow$ & & $\downarrow$ \\
+Romero-Dickey & $\longrightarrow$ & WGS 迭代 200轮 & $\longrightarrow$ & 复振幅插值 $\rightarrow$ SLM BMP \\
+解析相位 & & (MRAF投影+权重更新) & & $1024\times1024$ @ 17$\mu$m \\
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+\textbf{三个 Stage 的关系：}
+\begin{itemize}[nosep]
+  \item \textbf{Stage 1} 生成初始相位猜测（Romero-Dickey 解析法），输出 \texttt{phase0.mat}。
+  \item \textbf{Stage 2} 用 MRAF + WGS 迭代 200 轮优化相位，记录收敛曲线和指标。
+  \item \textbf{Stage 3} 把 $2048\times2048$ 的优化相位插值缩放到 $1024\times1024$，叠加闪耀光栅，输出 SLM 所需的 BMP 文件。
+\end{itemize}
+
+% ======================================================================
+\section{目标生成 — $330\times120\mu\text{m}$ 矩形平顶}
+
+\textbf{文件}: \texttt{src/rtad\_target.py}
+
+\subsection{升余弦边缘}
+
+矩形不是硬边界，而是通过升余弦 (raised cosine) 从 flat 区平滑过渡到零:
+
+\begin{lstlisting}
+# src/rtad_target.py, line 69-78
+def raised_cosine_edge(u, u0, u1):
+    """一维升余弦下降沿: u<=u0->1, u>=u1->0, 中间余弦过渡."""
+    C = np.zeros_like(u, dtype=np.float32)
+    C[u <= u0] = 1.0                    # flat 区 = 1
+    idx = (u > u0) & (u < u1)
+    t = (u[idx] - u0) / (u1 - u0)      # 归一化到 [0,1]
+    C[idx] = 0.5 * (1.0 + np.cos(np.pi * t))  # 余弦曲线从 1 降到 0
+    return C
+\end{lstlisting}
+
+\textbf{物理含义}: 这是一维 profile。对于 $330\times120\mu\text{m}$ 的目标:
+\begin{itemize}[nosep]
+  \item $a_{50} = 165\mu\text{m}$ (X 方向半宽, 50\% 强度处)
+  \item $a_0 = a_{50} - \delta_x = 150\mu\text{m}$ (flat 区边界, 强度=1)
+  \item $a_1 = a_{50} + \delta_x = 180\mu\text{m}$ (过渡区外边界, 强度=0)
+  \item $\delta_x = 15\mu\text{m}$ 控制边缘过渡的陡峭程度
+\end{itemize}
+
+二维模板 $I(x,y) = C_x(|x|) \times C_y(|y|)$:
+
+\begin{lstlisting}
+# src/rtad_target.py, line 151-154
+Ix = raised_cosine_edge(absX, a0, a1)
+Iy = raised_cosine_edge(absY, b0, b1)
+I_full = np.clip(Ix * Iy, 0.0, 1.0)   # 二维强度模板 (可分离)
+A_full = np.sqrt(I_full)               # 振幅 = sqrt(强度)
+\end{lstlisting}
+
+\subsection{四层 Mask 区域}
+
+MRAF 算法的核心是把焦面分成四个区，每个区有不同约束规则:
+
+\begin{lstlisting}
+# src/rtad_target.py, line 161-171
+# 从内到外四个区域:
+mask_flat   = (absX <= a0) & (absY <= b0)          # 平顶核心 (150x52 um)
+mask_signal = I_full >= release_level               # 约束区 (I >= e^{-2})
+mask_signal = mask_signal | mask_flat               # 确保 flat 一定在 signal 内
+mask_free   = mask_guard_window & ~mask_signal      # 自由区 (可随意演化)
+mask_bg_far = ~(mask_signal | mask_free)            # 远背景 (轻微衰减)
+\end{lstlisting}
+
+\textbf{区域示意图} (以 X 方向为例):
+
+\begin{verbatim}
+强度
+1.0 |  xxxxxxxxxxxx
+    |  x  flat   x\
+0.5 |  x  (a0=150) x\___ 升余弦过渡 ___
+    |  x           x        \
+e^{-2} |  xxxxxxxxxxxxxxxxxxxxxx\_________
+    |  |<-- signal -->|              \
+0   |  |<--          guard_window         -->|
+    |  |<--    free    -->|<--  bg_far  -->|
+
+ <-- 区域边界: a0=150, a50=165, a1=180, a2=200um -->
+\end{verbatim}
+
+% ======================================================================
+\section{初始相位 — Romero-Dickey 解析法}
+
+\textbf{文件}: \texttt{make\_phase0.py}
+
+DOE 初始相位不能用随机值——那样迭代根本收不敛。Romero-Dickey 方法从高斯光束和矩形平顶的能量守恒关系出发，解析求出可分离的初始相位:
+
+\begin{lstlisting}
+# make_phase0.py, line 44-51
+def romero_dickey_phase_1d(x_m, ri_m, Ro_m, lambda_m, f_m):
+    """Romero-Dickey 一维解析相位."""
+    xi = x_m / ri_m                           # 归一化坐标 (ri=1/e 振幅半径)
+    # 无量纲相位函数:
+    phi_dimless = (xi * np.sqrt(np.pi) / 2.0 * erf(xi)
+                   + 0.5 * np.exp(-xi**2) - 0.5)
+    # beta: 无量纲参数, 表示几何光学近似程度
+    beta = 2.0 * np.pi * ri_m * Ro_m / (lambda_m * f_m)
+    # beta x phi_dimless -> 真实相位 (rad)
+    return beta * phi_dimless
+\end{lstlisting}
+
+\textbf{$\beta$ 的物理含义}:
+\[
+\beta = 2\pi \times \frac{(\text{光束半径}) \times (\text{目标半宽})}{\lambda \times (\text{焦距})}
+\]
+\begin{itemize}[nosep]
+  \item $\beta > 10 \rightarrow$ 几何光学区，稳相近似精确，WGS 只需小幅修正
+  \item $\beta < 10 \rightarrow$ 衍射区，初始相位偏差大，WGS 需要大幅修正
+\end{itemize}
+
+对于 beam=3.8mm, $f=200\text{mm}$: $\beta_x=14.8$, $\beta_y=5.4$。X 方向在几何光学区，Y 方向在衍射区边缘。
+
+二维相位是可分离的: $\phi(x,y) = \phi_x(x) + \phi_y(y)$。
+
+% ======================================================================
+\section{DOE 面的输入光场}
+
+\textbf{文件}: \texttt{src/propagation.py}
+
+\begin{lstlisting}
+# src/propagation.py, line 48-66
+def make_input_gaussian(shape, dx_doe_m, gaussian_1e2_diameter_m,
+                        clear_aperture_m, xp, dtype):
+    """构建 DOE 平面高斯输入振幅."""
+    Ny, Nx = shape
+    # 坐标网格 (axis 0 = y, axis 1 = x)
+    x = (xp.arange(Nx, dtype=dtype) - Nx//2) * dtype(dx_doe_m)
+    y = (xp.arange(Ny, dtype=dtype) - Ny//2) * dtype(dx_doe_m)
+    X, Y = xp.meshgrid(x, y)
+    r2 = X*X + Y*Y
+
+    w = dtype(gaussian_1e2_diameter_m / 2.0)  # 1/e^2 强度半径
+    amp = xp.exp(-r2 / (w * w))               # 高斯振幅 A=exp(-r^2/w^2)
+
+    # 圆形通光孔径截断 (直径 15mm)
+    aperture_radius = dtype(clear_aperture_m / 2.0)
+    amp = xp.where(r2 <= aperture_radius**2, amp, 0.0)
+
+    # 总功率归一化到 1
+    return normalize_power(amp, xp, target_power=1.0)
+\end{lstlisting}
+
+\textbf{关键点}: $A(r) = \exp(-r^2/w^2)$——注意是强度 $I$ 的 $1/e^2$ 半径，对应振幅的 $1/e$ 半径。$w = 1/e^2\text{强度直径} / 2 = 1.9\text{mm}$ (对 beam=3.8mm)。
+
+% ======================================================================
+\section{傅里叶透镜传播}
+
+\textbf{文件}: \texttt{src/propagation.py}
+
+DOE 面和焦面之间通过一个傅里叶透镜耦合。前向传播 = 从 DOE 到焦面（我们看到的），反传 = 从焦面回到 DOE（迭代中用来更新相位）。
+
+\begin{lstlisting}
+# src/propagation.py, line 13-16
+def forward_fft(field_in, xp):
+    """DOE 平面 -> 焦平面: FFT."""
+    # ifftshift 把零频移到 (0,0) -> fft2 -> fftshift 把零频移回中心
+    return xp.fft.fftshift(xp.fft.fft2(xp.fft.ifftshift(field_in), norm="ortho"))
+
+def backward_fft(field_out, xp):
+    """焦平面 -> DOE 平面: 逆 FFT."""
+    return xp.fft.fftshift(xp.fft.ifft2(xp.fft.ifftshift(field_out), norm="ortho"))
+\end{lstlisting}
+
+\textbf{关键约定}:
+\begin{itemize}[nosep]
+  \item \texttt{norm="ortho"}: 保证 FFT 前后总功率守恒
+  \item 矩阵方向: \texttt{axis 0 = y (行)}, \texttt{axis 1 = x (列)}——和 MATLAB \texttt{meshgrid} 一致
+  \item 焦面坐标: $x_{\text{focal}}[k] = (k - N/2) \times \text{focal\_dx}$, 其中 $\text{focal\_dx} = 2.5\mu\text{m}$
+\end{itemize}
+
+\textbf{焦面像素间距}: $\text{focal\_dx} = \lambda \times f / (N \times \text{dx\_doe}) = 2.5\mu\text{m}$, $2048\times2048$ 的焦面覆盖 $\pm 2.56\text{mm}$。
+
+% ======================================================================
+\section{MRAF 焦面投影 — 三个区域，三种规则}
+
+\textbf{文件}: \texttt{src/mraf\_gs.py}
+
+这是每次迭代里最关键的一步: 把计算出的焦面复振幅"投影"到物理约束上。
+
+\begin{lstlisting}
+# src/mraf_gs.py, line 287-326 (精简, 去掉已注释的 GS 分支)
+def _project_farfield(farfield, target_amp_eff, masks_b, xp, method,
+                       mraf_factor, bg_mode, bg_factor):
+    """MRAF 焦面投影."""
+    # 提取当前焦面相位
+    phase_ff    = xp.angle(farfield)
+    phase_factor = xp.exp(1j * phase_ff)
+    signal = masks_b["mask_signal"]
+
+    projected = farfield.copy()
+    # (1) signal 区: 保留相位, 替换振幅为目标振幅
+    projected[signal] = target_amp_eff[signal] * phase_factor[signal]
+
+    # (2) free 区: 保留相位, 振幅 x mraf_factor (0.4)
+    free = masks_b["mask_free"]
+    projected[free] *= mraf_factor
+
+    # (3) 远背景: keep / attenuate / zero
+    bg = masks_b.get("mask_bg_far", ...)
+    if bg_mode == "attenuate":
+        projected[bg] *= bg_factor        # x 0.9, 几乎等同 keep
+    elif bg_mode == "zero":
+        projected[bg] = 0
+
+    return projected
+\end{lstlisting}
+
+\textbf{三区处理总结}:
+
+\begin{center}
+\begin{tabular}{p{0.18\textwidth}p{0.25\textwidth}p{0.18\textwidth}p{0.28\textwidth}}
+\toprule
+\textbf{区域} & \textbf{振幅处理} & \textbf{相位处理} & \textbf{效果} \\
+\midrule
+\texttt{mask\_signal} & 替换为 target\_amp $\times$ WGS\_weight & 保留原相位 & 强制趋近目标平顶 \\
+\texttt{mask\_free}   & $\times 0.4$ (衰减) & 保留原相位 & 给噪声自由度，不完全压制 \\
+\texttt{mask\_bg\_far} & $\times 0.9$ (几乎不变) & 保留原相位 & 不做强约束，避免能量倒灌 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{为什么 \texttt{mraf\_factor}=0.4 而不是 0}: 如果 free 区完全置零，能量无处可去，会回流到 signal 区形成波纹。给 free 区一定自由度反而让平顶更平。
+
+% ======================================================================
+\section{WGS 权重更新 — 平顶内的局部修匀}
+
+\textbf{文件}: \texttt{src/mraf\_gs.py}
+
+MRAF 只做区域级约束。WGS 在 \texttt{mask\_flat} 内部做像素级权重反馈，进一步压平不均匀。
+
+\begin{lstlisting}
+# src/mraf_gs.py, line 164-213 (精简)
+def _update_flat_wgs_weights(weights, farfield_amp, update_region,
+                              xp, backend, feedback_exponent,
+                              clip_min, clip_max, normalize_weights):
+    """WGS flat_local 权重更新."""
+    eps = np.float32(1e-12)
+
+    # 1. 提取 mask_flat 内的焦面振幅
+    amp_flat = farfield_amp[update_region]
+
+    # 2. 计算 flat 区平均振幅
+    amp_mean = xp.mean(amp_flat)
+
+    # 3. 核心公式: 每个像素的修正系数
+    #    ratio = mean(|E_flat|) / |E_pixel|
+    #    如果某像素比平均暗 -> ratio > 1 -> 权重增大 -> 下次投影时要求更高
+    #    如果某像素比平均亮 -> ratio < 1 -> 权重减小 -> 下次投影时要求更低
+    ratio = amp_mean / xp.maximum(amp_flat, eps)
+    updated = weights[update_region] * xp.power(ratio, feedback_exponent)
+
+    # 4. Clip: 防止权重跑飞 (默认 0.5 ~ 1.5)
+    updated = xp.clip(updated, clip_min, clip_max)
+
+    # 5. 均值归一化: 保持所有权重的平均值为 1.0
+    if normalize_weights:
+        updated = updated / xp.mean(updated)
+
+    weights[update_region] = updated
+    return weights
+\end{lstlisting}
+
+\subsection{直观理解}
+
+假设 mask\_flat 内某个像素振幅是 mean 的 0.8 倍，exponent=0.8:
+
+\[
+\text{ratio} = 1.0 / 0.8 = 1.25
+\]
+\[
+\text{weight\_new} = \text{weight\_old} \times 1.25^{0.8} = \text{weight\_old} \times 1.20
+\]
+
+这个像素的权重增加了 20\%。下次 MRAF 投影时，该像素被要求匹配更高目标振幅 $\rightarrow$ 迭代推动它变亮 $\rightarrow$ 趋近平坦。
+
+% ======================================================================
+\section{主迭代循环 — 完整流程}
+
+\textbf{文件}: \texttt{src/mraf\_gs.py}, \texttt{run\_refinement()} 函数
+
+每轮迭代做 5 件事:
+
+\begin{lstlisting}
+# src/mraf_gs.py, line 538-609 (精简, 去掉注释和日志)
+for it in range(1, total_iters + 1):          # total_iters = 200
+
+    # (1) 前向传播: DOE -> 焦面
+    field   = input_amp * exp(1j * phase)     # DOE 面复振幅
+    farfield = forward_fft(field)             # FFT -> 焦面复振幅
+    farfield_amp = abs(farfield)              # 焦面振幅
+
+    # (2) WGS 权重更新 (每 5 轮一次)
+    if it % update_every == 0:
+        weights = _update_flat_wgs_weights(   # 只在 mask_flat 内更新
+            weights, farfield_amp, update_region,
+            exponent=0.8, clip=[0.5, 1.5], normalize=True)
+
+    # (3) 加权目标振幅
+    target_weighted = base_target.copy()
+    target_weighted[mask_flat] *= weights     # flat 区 x WGS 权重
+
+    # (4) MRAF 投影 + 反传 + 相位提取
+    projected  = _project_farfield(           # 三区投影
+        farfield, target_weighted,
+        mraf_factor=0.4, bg_factor=0.9)
+    nearfield  = backward_fft(projected)      # IFFT -> DOE 面
+    phase      = angle(nearfield) % 2pi       # 提取新相位
+
+    # (5) 指标记录 (每 10 轮)
+    if it % metrics_interval == 0:
+        记录 RMS, size50, 效率...
+\end{lstlisting}
+
+\textbf{数据流示意图}:
+
+\begin{center}
+\begin{tabular}{ccccc}
+\multicolumn{2}{c}{\textbf{DOE 面}} & & \multicolumn{2}{c}{\textbf{焦面}} \\
+\cline{1-2} \cline{4-5}
+$\phi_{\text{old}}$ & & (1) FFT & & \\
+$A_{\text{input}}$ & $\xrightarrow{\hspace{2.5em}}$ & $\longrightarrow$ & $\xrightarrow{\hspace{2.5em}}$ & $E_{\text{farfield}}$ \\
+& & & & $\downarrow$ (2) WGS权重更新 \\
+& & & & $\downarrow$ (3) 加权目标 \\
+& & (4) IFFT & & $\downarrow$ (4) MRAF投影 \\
+$\phi_{\text{new}}$ & $\xleftarrow{\hspace{2.5em}}$ & $\longleftarrow$ & $\xleftarrow{\hspace{2.5em}}$ & \\
+\cline{1-2} \cline{4-5}
+\end{tabular}
+\end{center}
+
+% ======================================================================
+\section{ROM $\rightarrow$ SLM — 复振幅插值}
+
+\textbf{文件}: \texttt{convert\_to\_slm.py}
+
+计算用的 $2048\times2048$ 相位不能直接送到 SLM ($1024\times1024$)。需要裁切 + 缩放到 SLM 分辨率和像素间距。
+
+\begin{lstlisting}
+# convert_to_slm.py, line 84-106 (精简)
+# 1. 根据 SLM 物理尺寸 (17.4mm) / 计算网格像素间距 (20.8um) -> 裁切 837x837 像素
+phys_mm  = 1024 * 17.0e-3                     # SLM 物理尺寸 = 17.4mm
+crop_px  = int(phys_mm / (dx_doe_um * 1e-3))  # 裁切像素数 = 837
+phase_crop = phase[cy-418:cy+419, cx-418:cx+419]  # 从 2048 中心裁出
+
+# 2. * 关键: 复振幅插值 (不是直接插值相位!)
+zoom_ratio = 1024 / 837                        # ~ 1.22x 放大
+cfield = np.exp(1j * phase_crop)               # 转为复振幅
+real_z = zoom(cfield.real, zoom_ratio, order=3)  # 实部 cubic 插值
+imag_z = zoom(cfield.imag, zoom_ratio, order=3)  # 虚部 cubic 插值
+phase_slm = np.arctan2(imag_z, real_z)          # 从插值后的复振幅恢复相位
+phase_slm = phase_slm % (2*pi)
+\end{lstlisting}
+
+\textbf{为什么不能直接插值包裹相位}: 包裹相位在 $0 \leftrightarrow 2\pi$ 处有跳变，cubic spline 会把跳变当成高频信号产生巨大振铃。先转成连续平滑的 $\exp(i\phi)$ 分量，插值完再恢复相位，完全避免这个问题。
+
+% ======================================================================
+\section{闪耀光栅 — 让光斑偏离中心}
+
+在 DOE 相位上叠加线性斜坡，焦面光斑就会平移。
+
+\begin{lstlisting}
+# 光栅相位: phi_grating(x) = 2*pi * (dx / focal_dx) * x / N
+focal_dx_um = 2.5      # 焦面像素间距
+shift_x_um  = 400.0    # 想偏移 400um
+shift_y_um  = 200.0    # 想偏移 200um
+
+periods_x = shift_x_um / focal_dx_um   # = 160 个周期 (跨 2048 像素)
+periods_y = shift_y_um / focal_dx_um   # = 80  个周期
+
+x = np.arange(N) - N//2
+X, Y = np.meshgrid(x, x)
+grating = 2*pi * (periods_x * X + periods_y * Y) / N
+
+phase_with_grating = (phase_doe + grating) % (2*pi)
+\end{lstlisting}
+
+\textbf{物理原理}: 线性相位斜坡 = 平面波倾斜入射 = 焦面光斑侧移。1 个光栅周期（跨整个 DOE 孔径）= 焦面偏移 1 个像素 = $2.5\mu\text{m}$。
+
+% ======================================================================
+\section{指标计算 — 怎么判断做得好不好}
+
+\textbf{文件}: \texttt{src/metrics.py}
+
+\begin{lstlisting}
+# src/metrics.py, line 86-122 (精简)
+def compute_metrics(intensity, masks, x_um, y_um, iteration):
+    I = intensity
+    mask_flat = masks["mask_flat"]
+
+    # (1) 归一化: I_norm = I / mean(I[mask_flat])
+    #    不以全局最大值为基准, 因为那会被偶然的 hot pixel 拉偏
+    I_n = I / np.mean(I[mask_flat])
+
+    # (2) RMS 不均匀度 (最核心指标)
+    flat_vals = I_n[mask_flat]
+    flat_rms  = np.std(flat_vals) / np.mean(flat_vals)
+    # 例如: std=0.0087, mean=1.0 -> RMS = 0.87%
+
+    # (3) size50: 中心剖面半高全宽
+    profile_x = I_n[N//2, :]
+    size50_x  = width_at_level(x_um, profile_x, level=0.5)
+    # 从中心向两侧找到 I=0.5 的 crossing 点, 线性插值
+
+    # (4) 效率: signal 区内能量 / 总能量
+    efficiency = np.sum(I[mask_signal]) / np.sum(I)
+
+    return { "flat_rms": flat_rms, "size50_x": size50_x, ... }
+\end{lstlisting}
+
+\textbf{RMS 定义}: $\operatorname{std}(\text{mask\_flat}) / \operatorname{mean}(\text{mask\_flat})$，只算 flat core 内的像素。对于 beam=3.8mm，200 轮后 RMS ≈ 0.71\%。
+
+% ======================================================================
+\section{参数速查表}
+
+\begin{center}
+\begin{tabular}{p{0.35\textwidth}p{0.22\textwidth}p{0.33\textwidth}}
+\toprule
+\textbf{参数} & \textbf{值} & \textbf{含义} \\
+\midrule
+$\lambda$                              & 532 nm          & 激光波长 \\
+$f$                                    & 200 mm          & 透镜焦距 \\
+$N$                                    & 2048            & 计算网格 \\
+focal\_dx                              & 2.5 $\mu$m      & 焦面像素间距 \\
+beam (实测)                            & 3.8 mm          & $1/e^2$ 强度直径 \\
+目标 $W_{50}\times H_{50}$            & $330\times120$ $\mu$m & 平顶 50\% 尺寸 \\
+$\delta_x$ / $\delta_y$                & 15 / 8 $\mu$m   & 边缘过渡半宽 \\
+mraf\_factor                           & 0.4             & free 区衰减系数 \\
+bg\_factor                             & 0.9             & 背景衰减 (接近 keep) \\
+feedback\_exponent                     & 0.8             & WGS 修正力度 \\
+weight\_clip                           & [0.5, 1.5]      & 权重裁剪范围 \\
+update\_every                          & 5               & 每 N 轮更新一次权重 \\
+num\_iters                             & 200             & 总迭代轮数 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ======================================================================
+\section{文件索引}
+
+\begin{center}
+\begin{tabular}{p{0.38\textwidth}p{0.52\textwidth}}
+\toprule
+\textbf{想了解什么} & \textbf{去看哪个文件} \\
+\midrule
+初始相位怎么来的         & \texttt{make\_phase0.py} (RD 公式) \\
+目标光斑怎么定义         & \texttt{src/rtad\_target.py} (升余弦 + mask) \\
+FFT 传播怎么写的         & \texttt{src/propagation.py} \\
+迭代循环逻辑             & \texttt{src/mraf\_gs.py} $\rightarrow$ \texttt{run\_refinement()} \\
+焦面投影公式             & \texttt{src/mraf\_gs.py} $\rightarrow$ \texttt{\_project\_farfield()} \\
+WGS 权重怎么更新         & \texttt{src/mraf\_gs.py} $\rightarrow$ \texttt{\_update\_flat\_wgs\_weights()} \\
+怎么转成 SLM 格式        & \texttt{convert\_to\_slm.py} \\
+光斑质量怎么量化         & \texttt{src/metrics.py} $\rightarrow$ \texttt{compute\_metrics()} \\
+CLI 参数怎么传           & \texttt{run\_rtad\_mraf\_gs\_case.py} $\rightarrow$ \texttt{parse\_args()} \\
+GPU/CPU 怎么选           & \texttt{src/backend.py} \\
+MATLAB 文件怎么读        & \texttt{src/io\_mat.py} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
