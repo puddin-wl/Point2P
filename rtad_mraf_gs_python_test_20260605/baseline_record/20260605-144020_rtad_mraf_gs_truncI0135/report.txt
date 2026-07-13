@@ -1,0 +1,190 @@
+RTAD MRAF/GS Python refinement report
+
+Backend: GPU/CuPy device 0: NVIDIA GeForce RTX 5070 Ti
+Phase source: {'path': 'artifacts\\phase0_beam6p5mm\\phase0.mat', 'variable': 'phase0_wrapped_rad', 'transpose_h5': False, 'reader': 'scipy.io.loadmat', 'shape': (2048, 2048), 'dtype': 'float32', 'shape_before_phase_xy_swap': (2048, 2048), 'phase_xy_swapped': False, 'nonfinite_replaced_with_zero': 4105343, 'wrapped_to': '[0, 2*pi)', 'final_shape': (2048, 2048), 'final_dtype': 'float32', 'min_rad': 0.0, 'max_rad': 6.2829365730285645, 'is_smoke_test': False}
+
+Target measured size50:
+  W50_x_um = 330
+  H50_y_um = 120
+  full_template_size13p5_x_um = 345.699184
+  full_template_size13p5_y_um = 128.581674
+
+Target constraint semantics:
+  old/full RTAD constrained every I_full > 0 pixel.
+  truncated RTAD constrains only I_full >= release_level.
+  the low-intensity full-template tail goes to the MRAF free/noise region.
+  constraint_mode = truncated_rtad
+  release_level = 0.1353352832366127
+  mask_signal pixels = 7057
+  mask_free pixels = 3278
+  mask_template_support pixels = 7865
+
+MRAF projection formula:
+  mask_signal: E' = W * exp(i * angle(E))
+  mask_free: E' = mraf_factor * E
+  mask_bg_far: keep, attenuate by bg_factor, or zero according to bg_mode
+  mraf_factor=0 fully attenuates the free region; mraf_factor=1 keeps it unchanged.
+  bg_mode = attenuate, bg_factor = 0.9
+
+WGS refinement:
+  method = wgs
+  wgs_strategy = flat_local
+  mraf_iters = 150
+  wgs_iters = 50
+  wgs_xy_iters = 20
+  wgs_xonly_iters = 30
+  wgs_update_mask = flat (mask_flat only)
+  wgs_feedback = amplitude
+  wgs_feedback_exponent = 0.8
+  wgs_xy_feedback_exponent = 0.3
+  wgs_x_feedback_exponent = 0.45
+  wgs_update_every = 5
+  wgs_xy_update_every = 5
+  wgs_x_update_every = 5
+  wgs_weight_clip = [0.5, 1.5]
+  wgs_x_weight_clip = [0.5, 2.5]
+  wgs_normalize_weights = True
+  wgs_x_normalize = True
+  WGS updates only mask_flat weights. It does not update mask_edge_lock, mask_free, or mask_bg_far.
+  MRAF first allocates energy between the RTAD signal/free/background regions; WGS then compensates local flat-core brightness nonuniformity by changing target amplitude weights.
+  xy_then_x stage 1 applies 2D flat-local XY feedback. Stage 2 freezes y-local structure and updates a 1D x weight from the flat-core column-mean amplitude.
+  Diagnostics metrics remain post-processing only; they are not used as constraints.
+
+Run warnings/info:
+  none
+
+WGS final weight stats:
+wgs_weight_mean: 1
+wgs_weight_std: 0.16383363
+wgs_weight_min: 0.63538796
+wgs_weight_max: 1.5014088
+wgs_weight_p01: 0.70622634
+wgs_weight_p99: 1.5014088
+weights_2d_mean: 1
+weights_2d_std: 0.16383363
+weights_2d_min: 0.63538796
+weights_2d_max: 1.5014088
+w_x_mean: 1
+w_x_std: 0
+w_x_min: 1
+w_x_max: 1
+
+MRAF-end metrics:
+
+
+WGS-XY-end metrics:
+
+
+Final metrics:
+iteration: 200
+flat_uniformity: 0.985969
+flat_rms: 0.014031004
+efficiency_flat: 0.75774766
+efficiency_support: 0.94720126
+background_fraction: 0.028077439
+free_fraction: 0.024721298
+max_intensity: 0.00015617795
+mean_intensity_flat: 0.00015274088
+size50_x_um: 329.55567
+size50_y_um: 119.82494
+edge_max_over_flat_mean: 0.98792797
+peak_overshoot: 0.022502661
+stage: wgs
+wgs_strategy: flat_local
+wgs_substage: wgs
+wgs_weight_mean: 1
+wgs_weight_std: 0.16383363
+wgs_weight_min: 0.63538796
+wgs_weight_max: 1.5014088
+wgs_weight_p01: 0.70622634
+wgs_weight_p99: 1.5014088
+weights_2d_mean: 1
+weights_2d_std: 0.16383363
+weights_2d_min: 0.63538796
+weights_2d_max: 1.5014088
+w_x_mean: 1
+w_x_std: 0
+w_x_min: 1
+w_x_max: 1
+
+Config used:
+{
+  "physical": {
+    "wavelength_m": 5.32e-07,
+    "focal_length_m": 0.429,
+    "input_gaussian_1e2_diameter_m": 0.006500000000000001,
+    "clear_aperture_m": 0.015
+  },
+  "grid": {
+    "N": 2048,
+    "focal_dx_um": 2.5,
+    "focal_dy_um": 2.5,
+    "axis_source": "phase_mat:focal_x_m/focal_y_m",
+    "dx_doe_m": 4.457578125000001e-05
+  },
+  "target": {
+    "W50_um": 330.0,
+    "H50_um": 120.0,
+    "delta_x_um": 15.0,
+    "delta_y_um": 8.0,
+    "guard_x_um": 20.0,
+    "guard_y_um": 12.0,
+    "constraint_mode": "truncated_rtad",
+    "release_level": 0.1353352832366127,
+    "target_mode": "separable"
+  },
+  "refinement": {
+    "method": "wgs",
+    "num_iters": 200,
+    "mraf_iters": 150,
+    "wgs_iters": 50,
+    "mraf_factor": 0.8,
+    "wgs_after_iters": 0,
+    "feedback_exponent": 0.7,
+    "wgs_update_mask": "flat",
+    "wgs_feedback": "amplitude",
+    "wgs_strategy": "flat_local",
+    "wgs_xy_iters": 20,
+    "wgs_xonly_iters": 30,
+    "wgs_feedback_exponent": 0.8,
+    "wgs_xy_feedback_exponent": 0.3,
+    "wgs_x_feedback_exponent": 0.45,
+    "wgs_update_every": 5,
+    "wgs_xy_update_every": 5,
+    "wgs_x_update_every": 5,
+    "wgs_weight_min": 0.5,
+    "wgs_weight_max": 1.5,
+    "wgs_xy_weight_min": 0.5,
+    "wgs_xy_weight_max": 2.0,
+    "wgs_x_weight_min": 0.5,
+    "wgs_x_weight_max": 2.5,
+    "wgs_normalize_weights": true,
+    "wgs_x_normalize": true,
+    "wgs_update_region": "flat",
+    "bg_mode": "attenuate",
+    "bg_factor": 0.9,
+    "wgs_clip_min": 0.5,
+    "wgs_clip_max": 2.0,
+    "metrics_interval": 10
+  },
+  "paths": {
+    "phase_mat": "artifacts/phase0_beam6p5mm/phase0.mat",
+    "phase_var": "phase0_wrapped_rad",
+    "out_root": "artifacts",
+    "transpose_h5": false,
+    "swap_phase_xy": false
+  },
+  "runtime": {
+    "use_cupy": true,
+    "device_id": 0,
+    "random_seed": 1,
+    "smoke_shape": 512,
+    "smoke_phase": "random",
+    "figure_dpi": 150
+  },
+  "slm": {
+    "width": 1024,
+    "height": 1024,
+    "pitch_um": 17.0
+  }
+}
