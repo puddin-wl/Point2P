@@ -1,0 +1,319 @@
+Point2P 项目工作日志
+日期：2026-07-13
+
+说明：
+本日志记录今天围绕 RTAD raised-cosine 矩形匀化 DOE、初始相位、SLM 位移补偿及目标尺寸调整所做的整理、计算和仿真。
+除专有名词、变量名、文件名和数值参数外，尽量使用中文表述。
+
+======================================================================
+一、确认当前生产基线
+======================================================================
+
+当前认定的参考结果仍为：
+E:\program\Point2P\rtad_mraf_gs_python\artifacts\20260605-144020_rtad_mraf_gs_truncI0135
+
+这组结果被视为目前已经验证可正常运行的方法基线，关键条件如下：
+
+phase0：artifacts/phase0_beam6p5mm/phase0.mat
+phase_var：phase0_wrapped_rad
+beam：6.5 mm（1/e^2 intensity diameter）
+swap_phase_xy：False
+W50/H50：330/120 um
+delta_x/delta_y：15/8 um
+constraint_mode：truncated_rtad
+release_level：exp(-2) = 0.1353352832366127
+method：wgs
+wgs_strategy：flat_local
+num_iters：200
+mraf_factor：0.8
+bg_factor：0.9
+
+基线关键结果：
+
+size50_x_um：约 329.55567
+size50_y_um：约 119.82494
+flat_uniformity：约 0.985969
+flat_rms：约 0.014031
+efficiency_support：约 0.947201
+
+实验上目前观察到的光斑尺寸约为 310 x 100 um，小于设计的 330 x 120 um。
+现阶段保留两类原因：
+
+1. 光路、安装、scan lens/galvo 或其他几何因素造成的畸变和缩放不一致。
+2. 仿真、实验和厂商之间的尺寸定义或归一化方式不完全一致。
+
+处理顺序仍然是：先调整光路；若光路调整后尺寸仍然稳定偏小，再使用程序目标尺寸补偿。
+
+======================================================================
+二、冻结测试目录和 Git 状态
+======================================================================
+
+已经建立测试目录：
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605
+
+该目录来自原项目可运行版本的冻结副本，用于后续测试，避免直接破坏原始基线。
+目录中保留了源码、入口脚本、基线配置、必要 phase0 和基线溯源记录，没有整体复制历史 artifacts。
+
+Git 分支：
+codex/rtad-mraf-gs-test-20260605
+
+已推送的基线快照 commit：
+fd9bc0e Add RTAD MRAF GS test baseline snapshot
+
+大体积 phase0、仿真输出和其他 artifacts 按约定不上传 Git。
+今天后半段新增的 phase0、尺寸扫描结果及部分代码修改主要保留在本地，不能默认认为已经推送。
+
+======================================================================
+三、SLM 大相位位移补偿
+======================================================================
+
+确认用户所说的位移补偿不是改变输入 Gaussian beam，也不是只增加 blaze，而是把已经生成的“大相位”相对固定光束整体平移。
+
+相关脚本已经整理进测试目录：
+
+shift_sweep_slm.py
+verify_shift_sweep.py
+add_blaze_grating.py
+
+核心位移逻辑：
+
+ph_shifted = shift_phase(phase, sy, sx)
+
+其本质是：
+
+np.roll(np.roll(phase, shift_y_px, axis=0), shift_x_px, axis=1)
+
+完整顺序为：
+
+原始 phase
+-> 整体 X/Y 像素位移
+-> 添加 blaze
+-> 导出 SLM 文件
+
+需要继续区分三个概念：
+
+shift_phase：SLM 安装位置/相位相对光束的位置补偿。
+add_blaze：通过线性相位坡度改变焦斑偏转。
+swap_phase_xy：MATLAB/Python 读取相位时的轴向约定，不是 SLM 位置补偿。
+
+相关说明文件：
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605\README_SLM_SHIFT.md
+
+======================================================================
+四、phase0 整理与 6.5 x 6.7 mm 初始相位
+======================================================================
+
+使用以下项目生成了 X=6.5 mm、Y=6.7 mm 的椭圆 Gaussian 输入初始相位：
+E:\program\Point2P\initial_phase_generation
+
+生成代码支持分别指定：
+
+input_1e2_diameter_x_m
+input_1e2_diameter_y_m
+
+椭圆 Gaussian intensity 定义为：
+
+I = exp(-2 * (X^2/rx^2 + Y^2/ry^2))
+
+对应 amplitude：
+
+A = exp(-(X^2/rx^2 + Y^2/ry^2))
+
+测试目录中已经整理两组 phase0：
+
+1. 6.5 x 6.5 mm
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605\artifacts\phase0_library\beamX6p5mm_Y6p5mm
+
+2. 6.5 x 6.7 mm
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605\artifacts\phase0_library\beamX6p5mm_Y6p7mm
+
+关于 X/Y 方向的结论：
+
+MATLAB 生成目录中的 initial_intensity 图方向正确，MAT 文件配置也明确记录 X=6.5 mm、Y=6.7 mm。
+但该椭圆 phase0 进入 Python 仿真时，需要使用 swap_phase_xy=True 才能得到横向长、纵向短的正确初始重建。
+此前使用 no-swap 得到纵向长条的结果属于轴向读取错误，不应使用。
+
+修正后的 6.5 x 6.7 mm 仿真目录：
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605\artifacts\run_phase0_beamX6p5mm_Y6p7mm_swapxy
+
+修正结果：
+
+size50_x_um：约 329.55548
+size50_y_um：约 119.82434
+flat_uniformity：约 0.985968
+efficiency_support：约 0.947202
+
+由于 6.5 x 6.5 mm 接近圆对称，是否转置在图上很难辨认；当前尺寸调整测试继续使用 6.5 x 6.5 mm phase0，并保持 swap_phase_xy=False。
+
+======================================================================
+五、raised-cosine 参数和尺寸换算
+======================================================================
+
+项目中的目标首先按 intensity 定义：
+
+C(u) = 1，u <= u0
+C(u) = 0.5 * (1 + cos(pi*(u-u0)/(u1-u0)))，u0 < u < u1
+C(u) = 0，u >= u1
+
+其中：
+
+u0 = D50/2 - delta
+u1 = D50/2 + delta
+
+当前使用 delta_x=15 um、delta_y=8 um。
+今天没有找到可以严格证明 15/8 最初来源的厂商参数记录，因此暂时保留现值，不再追溯或修改。
+
+由 raised-cosine 解析式可得：
+
+D90 = D50 - 1.180668941 * delta
+D13.5 = D50 + 1.040671278 * delta
+(D13.5 - D90)/2 = 1.110670110 * delta
+
+这也解释了此前讨论的三个系数：
+
+1.18067：size50 到 size90 的换算系数。
+1.04067：size50 到 size13.5 的换算系数。
+1.11067：单侧 size90 到 size13.5 的过渡宽度系数。
+
+本轮选择“不等比例扩大”方案，即 delta_x/delta_y 仍保持 15/8 um，只向外调整 W50/H50。
+
+若只按连续 raised-cosine 反推，使理论 size90=330 x 120 um，则：
+
+W50 = 330 + 1.180668941*15 = 347.710034 um
+H50 = 120 + 1.180668941*8 = 129.445352 um
+
+======================================================================
+六、固定 delta 的第一次完整仿真
+======================================================================
+
+使用参数：
+
+phase0：6.5 x 6.5 mm
+swap_phase_xy：False
+W50：347.710034 um
+H50：129.445352 um
+delta_x/delta_y：15/8 um
+其他 WGS 参数保持基线不变
+
+输出目录：
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605\artifacts\run_size90_330x120_fixed_delta_beam6p5mm
+
+目标模板离散测量的 size90 准确为 330 x 120 um，但最终重建为：
+
+size90_x_um：329.20790
+size90_y_um：112.42614
+size50_x_um：346.74993
+size50_y_um：129.04835
+uniformity_rms_percent：98.53635
+efficiency_support：95.29908%
+
+判断：
+
+平顶区域没有明显问题。
+X 方向边缘基本按目标实现，Y 方向主要问题是 90% 到 13.5% 的边缘过渡被展宽。
+
+目标 Y 单侧 90%->13.5% 过渡约 9.04 um；重建结果约 16.18 um。
+当前 WGS 权重只在 mask_flat 内更新，因此优先保证平顶均匀性，没有针对边缘斜率或 size90 做独立反馈。
+此外 Y 方向完整 transition 只有 2*delta_y=16 um，在 2.5 um 网格上约 6.4 个采样点，比 X 方向更难精确实现。
+
+======================================================================
+七、H50 三点扫描
+======================================================================
+
+为补偿 Y 方向 size90 偏小，固定：
+
+W50=347.710034 um
+delta_x/delta_y=15/8 um
+phase0=6.5 x 6.5 mm
+swap_phase_xy=False
+
+只扫描 H50=135、137、139 um。
+
+结果如下：
+
+H50=135 um
+size90_x_um=329.11119
+size90_y_um=117.72037
+uniformity_rms_percent=98.67035
+efficiency_support=95.47381%
+
+H50=137 um
+size90_x_um=329.34734
+size90_y_um=121.06249
+uniformity_rms_percent=98.18449
+efficiency_support=95.86049%
+
+H50=139 um
+size90_x_um=329.06637
+size90_y_um=122.16200
+uniformity_rms_percent=98.56147
+efficiency_support=95.74260%
+
+三点线性最小二乘关系：
+
+size90_y = 1.1104074 * H50 - 31.8108634
+R^2 = 0.92168
+
+线性反求 size90_y=120 um 时：
+
+H50 = 136.71636 um
+
+该值的确认运行得到：
+
+size90_x_um=329.39350
+size90_y_um=120.93010
+uniformity_rms_percent=98.12943
+efficiency_support=95.86251%
+
+说明 H50 到重建 size90_y 的映射不是完全线性的，存在局部数值波动。
+不过当前目标是得到工程上足够接近的尺寸，没有必要继续追求小数点后的反复确认。
+
+本次会话最终采用便于记录和复现的实用方案：
+
+W50=347.710 um
+H50=137 um
+delta_x/delta_y=15/8 um
+
+对应结果约为：
+
+size90=329.347 x 121.062 um
+uniformity=98.184%
+efficiency_support=95.860%
+
+关于均匀度：
+
+98.670% 到 98.184% 的变化约为 0.486 个百分点，即约千分之五的绝对比例变化。
+该变化很小，当前不认为是需要担心的问题，也不应成为否定 H50=137 um 方案的理由。
+
+已中止且不应使用的目录：
+E:\program\Point2P\rtad_mraf_gs_python_test_20260605\artifacts\final_h50_136p219_fixed_delta_beam6p5mm
+
+该目录对应的运行被手动停止，结果不完整。
+
+======================================================================
+八、今天新增的运行能力
+======================================================================
+
+测试目录中的 run_rtad_mraf_gs_case.py 新增两个可选 CLI 参数：
+
+--w50
+--h50
+
+这样可以在不修改 config_default.py 基线默认值的情况下做尺寸扫描。
+脚本默认行为保持不变。
+
+示例：
+
+python run_rtad_mraf_gs_case.py --w50 347.710034 --h50 137 --delta-x 15 --delta-y 8
+
+======================================================================
+九、后续建议
+======================================================================
+
+1. 下一次实验优先使用 W50=347.710 um、H50=137 um、delta=15/8 um 的结果进行尺寸观察。
+2. 光路仍应先处理明显的横纵向畸变；程序补偿不能替代光路校准。
+3. 实验与仿真必须继续使用同一种归一化和尺寸阈值定义，当前 size90 指 90% intensity width。
+4. 如果以后需要从算法上精确控制边缘斜率，可以考虑给 mask_edge_lock 增加独立 WGS feedback；当前无需处理。
+5. 不要覆盖原始生产基线，后续测试继续在 rtad_mraf_gs_python_test_20260605 中进行。
+
+日志结束。

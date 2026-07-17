@@ -24,6 +24,12 @@ cfg.aperture_radius_m = cfg.aperture_diameter_m / 2;
 cfg.input_1e2_diameter_m = 5e-3;
 cfg.input_1e2_radius_m = cfg.input_1e2_diameter_m / 2;
 cfg.input_1e_radius_m = cfg.input_1e2_radius_m / sqrt(2);
+cfg.input_1e2_diameter_x_m = cfg.input_1e2_diameter_m;
+cfg.input_1e2_diameter_y_m = cfg.input_1e2_diameter_m;
+cfg.input_1e2_radius_x_m = cfg.input_1e2_diameter_x_m / 2;
+cfg.input_1e2_radius_y_m = cfg.input_1e2_diameter_y_m / 2;
+cfg.input_1e_radius_x_m = cfg.input_1e2_radius_x_m / sqrt(2);
+cfg.input_1e_radius_y_m = cfg.input_1e2_radius_y_m / sqrt(2);
 
 % Desired rectangular flat-top size used by the RD initial phase.
 cfg.target_size_x_m = 330e-6;
@@ -48,8 +54,8 @@ cfg.phase_scale_y = 1;
 cfg.Ro_definition = "full_size_over_sqrt_pi";
 cfg.Ro_x_m = cfg.target_size_x_m / sqrt(pi);
 cfg.Ro_y_m = cfg.target_size_y_m / sqrt(pi);
-cfg.beta_x = 2 * pi * cfg.input_1e_radius_m * cfg.Ro_x_m / (cfg.lambda_m * cfg.f_m);
-cfg.beta_y = 2 * pi * cfg.input_1e_radius_m * cfg.Ro_y_m / (cfg.lambda_m * cfg.f_m);
+cfg.beta_x = 2 * pi * cfg.input_1e_radius_x_m * cfg.Ro_x_m / (cfg.lambda_m * cfg.f_m);
+cfg.beta_y = 2 * pi * cfg.input_1e_radius_y_m * cfg.Ro_y_m / (cfg.lambda_m * cfg.f_m);
 
 % Plot/output defaults used by run_initial_phase_generation.m.
 cfg.figure_dpi = 150;

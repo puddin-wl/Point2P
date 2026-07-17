@@ -78,6 +78,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bg-mode", choices=["keep", "attenuate", "zero"], default=None, help="MRAF background handling.")
     parser.add_argument("--bg-factor", type=float, default=None, help="MRAF background attenuation if bg-mode=attenuate.")
     parser.add_argument("--smoke-shape", type=int, default=None, help="Shape for random/zero smoke phase when no MAT is supplied.")
+    parser.add_argument("--beam-diameter", type=float, default=None, help="Override beam 1/e^2直径 (mm).")
     parser.add_argument("--skip-diagnostics", action="store_true", help="Do not run lightweight Python diagnostics after refinement.")
     return parser.parse_args()
 
@@ -155,6 +156,8 @@ def apply_overrides(config: dict, args: argparse.Namespace) -> dict:
         cfg["runtime"]["use_cupy"] = bool(args.use_cupy)
     if args.smoke_shape is not None:
         cfg["runtime"]["smoke_shape"] = args.smoke_shape
+    if args.beam_diameter is not None:
+        cfg["physical"]["input_gaussian_1e2_diameter_m"] = args.beam_diameter * 1e-3
     return cfg
 
 

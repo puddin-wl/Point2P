@@ -8,6 +8,8 @@ CONFIG = {
         "wavelength_m": 532e-9,
         "focal_length_m": 429e-3,
         "input_gaussian_1e2_diameter_m": 6.5e-3,
+        "input_gaussian_1e2_diameter_x_m": 6.5e-3,
+        "input_gaussian_1e2_diameter_y_m": 6.5e-3,
         "clear_aperture_m": 15e-3,
     },
     "grid": {

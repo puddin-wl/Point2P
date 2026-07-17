@@ -1,4 +1,9 @@
-"""Default configuration for one RTAD MRAF/GS refinement run."""
+"""Default configuration for RTAD MRAF/GS refinement — formal pipeline (f=429mm).
+
+Target SLM: 1024×1024 @ 17 μm pixel pitch.
+Refinement defaults reflect the verified best-params baseline
+(artifacts/fixed_baseline_bg0p9_initial_compare_20260429-175148).
+"""
 
 from __future__ import annotations
 
@@ -7,7 +12,7 @@ CONFIG = {
     "physical": {
         "wavelength_m": 532e-9,
         "focal_length_m": 429e-3,
-        "input_gaussian_1e2_diameter_m": 5e-3,
+        "input_gaussian_1e2_diameter_m": 6e-3,  # 6mm baseline (2026-06-02), 原5mm
         "clear_aperture_m": 15e-3,
     },
     "grid": {
@@ -27,26 +32,26 @@ CONFIG = {
         "target_mode": "separable",
     },
     "refinement": {
-        "method": "mraf_then_wgs",
+        "method": "wgs",
         "num_iters": 200,
         "mraf_iters": 150,
         "wgs_iters": 50,
-        "mraf_factor": 0.4,
+        "mraf_factor": 0.8,
         "wgs_after_iters": 0,
         "feedback_exponent": 0.7,
         "wgs_update_mask": "flat",
         "wgs_feedback": "amplitude",
-        "wgs_strategy": "xy_then_x",
+        "wgs_strategy": "flat_local",
         "wgs_xy_iters": 20,
         "wgs_xonly_iters": 30,
-        "wgs_feedback_exponent": 0.3,
+        "wgs_feedback_exponent": 0.8,
         "wgs_xy_feedback_exponent": 0.3,
         "wgs_x_feedback_exponent": 0.45,
         "wgs_update_every": 5,
         "wgs_xy_update_every": 5,
         "wgs_x_update_every": 5,
         "wgs_weight_min": 0.5,
-        "wgs_weight_max": 2.0,
+        "wgs_weight_max": 1.5,
         "wgs_xy_weight_min": 0.5,
         "wgs_xy_weight_max": 2.0,
         "wgs_x_weight_min": 0.5,
@@ -55,7 +60,7 @@ CONFIG = {
         "wgs_x_normalize": True,
         "wgs_update_region": "flat",
         "bg_mode": "attenuate",
-        "bg_factor": 0.05,
+        "bg_factor": 0.9,
         "wgs_clip_min": 0.5,
         "wgs_clip_max": 2.0,
         "metrics_interval": 10,
@@ -74,5 +79,10 @@ CONFIG = {
         "smoke_shape": 512,
         "smoke_phase": "random",
         "figure_dpi": 150,
+    },
+    "slm": {
+        "width": 1024,
+        "height": 1024,
+        "pitch_um": 17.0,
     },
 }

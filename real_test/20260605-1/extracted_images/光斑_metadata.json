@@ -1,0 +1,55 @@
+{
+  "source_file": "E:\\program\\Point2P\\real_test\\20260605-1\\光斑.bgData",
+  "source_file_bytes": 105444255,
+  "hdf5_data_path": "/BG_DATA/1/DATA",
+  "saved_npy_shape": [
+    26214400
+  ],
+  "saved_npy_dtype": "int32",
+  "png_shape_height_width": [
+    5120,
+    5120
+  ],
+  "png_dtype": "uint8",
+  "png_percentile_stretch": {
+    "low_percentile": 1.0,
+    "high_percentile": 99.5,
+    "low_value": -16866344.0,
+    "high_value": 1178510296.0
+  },
+  "width_px": 5120,
+  "height_px": 5120,
+  "pixel_scale_x_um": 4.5,
+  "pixel_scale_y_um": 4.5,
+  "field_of_view_x_um": 23040.0,
+  "field_of_view_y_um": 23040.0,
+  "field_of_view_x_mm": 23.04,
+  "field_of_view_y_mm": 23.04,
+  "offset_x_px": 0,
+  "offset_y_px": 0,
+  "exposure_stamp": 44.59,
+  "gain_stamp": 0.0,
+  "binning_x": 1,
+  "binning_y": 1,
+  "bin_type": "Sample",
+  "bit_encoding": "R16_10",
+  "sequence_id": 1434,
+  "timestamp": "2026-06-05T14:14:21.6113714+08:00",
+  "saturated": false,
+  "data_type": "IntegerArray",
+  "data_stats": {
+    "min": -111238184.0,
+    "p1": -16866344.0,
+    "median": 10396632.0,
+    "p99": 977183704.0,
+    "p99_5": 1178510296.0,
+    "max": 1742644184.0,
+    "mean": 45259217.36,
+    "sum": 1186443227561984.0
+  },
+  "outputs": {
+    "png": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\光斑.png",
+    "npy": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\光斑.npy",
+    "metadata_json": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\光斑_metadata.json"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "threshold_fraction_of_flat": 0.5,
+  "effective_pixel_um": [
+    7.38,
+    7.38
+  ],
+  "top_edge_angle_deg": 8.769167485832037,
+  "bottom_edge_angle_deg": 4.497968589332518,
+  "top_edge_rmse_px": 6.259436486699036,
+  "bottom_edge_rmse_px": 4.067791718034373,
+  "pca_major_axis_angle_deg": -4.223809581055804,
+  "interpretation": "The 50%-level contour is not an ideal camera-rotated rectangle: the fitted top and bottom edges have different apparent slopes, while the PCA major axis is tilted by about -4 degrees. Camera rotation can remove only global image rotation; it cannot remove shear/keystone/non-telecentric distortion introduced by galvo and scan-lens geometry.",
+  "outputs": {
+    "figure": "E:\\program\\Point2P\\real_test\\20260605-1\\visualizations\\20260605-5_skew_explanation.png"
+  }
+}

@@ -50,6 +50,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--constraint-mode", default=None, choices=["truncated_rtad", "full_rtad"], help="Target constraint mode.")
     parser.add_argument("--release-level", type=float, default=None, help="Intensity release threshold for truncated RTAD.")
     parser.add_argument("--target-mode", default=None, choices=["separable"], help="Full RTAD template mode.")
+    parser.add_argument("--w50", type=float, default=None, help="RTAD 50%% intensity width in um.")
+    parser.add_argument("--h50", type=float, default=None, help="RTAD 50%% intensity height in um.")
     parser.add_argument("--delta-x", type=float, default=None, help="RTAD x falling-edge half width in um.")
     parser.add_argument("--delta-y", type=float, default=None, help="RTAD y falling-edge half width in um.")
     parser.add_argument("--outdir", default=None, help="Output directory. If omitted, timestamped artifacts dir is used.")
@@ -79,6 +81,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bg-factor", type=float, default=None, help="MRAF background attenuation if bg-mode=attenuate.")
     parser.add_argument("--smoke-shape", type=int, default=None, help="Shape for random/zero smoke phase when no MAT is supplied.")
     parser.add_argument("--beam-diameter", type=float, default=None, help="Override beam 1/e^2直径 (mm).")
+    parser.add_argument("--beam-diameter-x", type=float, default=None, help="Override x-axis beam 1/e^2 intensity diameter (mm).")
+    parser.add_argument("--beam-diameter-y", type=float, default=None, help="Override y-axis beam 1/e^2 intensity diameter (mm).")
     parser.add_argument("--skip-diagnostics", action="store_true", help="Do not run lightweight Python diagnostics after refinement.")
     return parser.parse_args()
 
@@ -110,6 +114,10 @@ def apply_overrides(config: dict, args: argparse.Namespace) -> dict:
         cfg["target"]["release_level"] = args.release_level
     if args.target_mode is not None:
         cfg["target"]["target_mode"] = args.target_mode
+    if args.w50 is not None:
+        cfg["target"]["W50_um"] = args.w50
+    if args.h50 is not None:
+        cfg["target"]["H50_um"] = args.h50
     if args.delta_x is not None:
         cfg["target"]["delta_x_um"] = args.delta_x
     if args.delta_y is not None:
@@ -157,7 +165,14 @@ def apply_overrides(config: dict, args: argparse.Namespace) -> dict:
     if args.smoke_shape is not None:
         cfg["runtime"]["smoke_shape"] = args.smoke_shape
     if args.beam_diameter is not None:
-        cfg["physical"]["input_gaussian_1e2_diameter_m"] = args.beam_diameter * 1e-3
+        diameter_m = args.beam_diameter * 1e-3
+        cfg["physical"]["input_gaussian_1e2_diameter_m"] = diameter_m
+        cfg["physical"]["input_gaussian_1e2_diameter_x_m"] = diameter_m
+        cfg["physical"]["input_gaussian_1e2_diameter_y_m"] = diameter_m
+    if args.beam_diameter_x is not None:
+        cfg["physical"]["input_gaussian_1e2_diameter_x_m"] = args.beam_diameter_x * 1e-3
+    if args.beam_diameter_y is not None:
+        cfg["physical"]["input_gaussian_1e2_diameter_y_m"] = args.beam_diameter_y * 1e-3
     return cfg
 
 
@@ -398,7 +413,9 @@ def main() -> int:
     input_amp = make_input_gaussian(
         shape=phase0.shape,
         dx_doe_m=dx_doe_m,
-        gaussian_1e2_diameter_m=physical["input_gaussian_1e2_diameter_m"],
+        gaussian_1e2_diameter_m=physical.get("input_gaussian_1e2_diameter_m"),
+        gaussian_1e2_diameter_x_m=physical.get("input_gaussian_1e2_diameter_x_m"),
+        gaussian_1e2_diameter_y_m=physical.get("input_gaussian_1e2_diameter_y_m"),
         clear_aperture_m=physical["clear_aperture_m"],
         xp=backend.xp,
         dtype=backend.float_dtype,

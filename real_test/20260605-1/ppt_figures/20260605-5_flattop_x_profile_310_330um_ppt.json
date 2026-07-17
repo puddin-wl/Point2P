@@ -1,0 +1,22 @@
+{
+  "profile_y_px": 459,
+  "normalization": "I / median(flat)",
+  "targets": [
+    {
+      "target_width_um": 310.0,
+      "actual_width_um": 310.000151332785,
+      "level": 0.4550992549627481,
+      "left_um": 4579.376156935148,
+      "right_um": 4889.376308267933,
+      "color": "#2ca02c"
+    },
+    {
+      "target_width_um": 330.0,
+      "actual_width_um": 329.99931232391975,
+      "level": 0.11545727286364318,
+      "left_um": 4569.419212165863,
+      "right_um": 4899.4185244897835,
+      "color": "#ff7f0e"
+    }
+  ]
+}

@@ -187,6 +187,8 @@ def _recompute_intensity(case_dir: Path, config: dict[str, Any]) -> tuple[np.nda
         shape=phase.shape,
         dx_doe_m=dx_doe_m,
         gaussian_1e2_diameter_m=float(physical.get("input_gaussian_1e2_diameter_m", 5e-3)),
+        gaussian_1e2_diameter_x_m=physical.get("input_gaussian_1e2_diameter_x_m"),
+        gaussian_1e2_diameter_y_m=physical.get("input_gaussian_1e2_diameter_y_m"),
         clear_aperture_m=float(physical.get("clear_aperture_m", 15e-3)),
         xp=np,
         dtype=np.float32,

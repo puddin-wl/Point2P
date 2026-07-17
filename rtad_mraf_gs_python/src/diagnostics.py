@@ -363,7 +363,7 @@ def derivative_sidelobe_axis(
         positive = np.where(search, np.maximum(deriv, 0.0), 0.0)
         if np.any(search):
             span = max(float(r[search][-1] - r[search][0]), 1e-12)
-            scores.append(float(np.trapezoid(positive[search], r[search]) / span))
+            scores.append(float(np.trapz(positive[search], r[search]) / span))
             peaks.append(float(np.max(smooth[search])))
         details[side] = {
             "r_um": r,

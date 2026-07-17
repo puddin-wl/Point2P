@@ -1,0 +1,341 @@
+{
+  "source_file": "E:\\program\\Point2P\\real_test\\20260716\\20260716-1.bmData",
+  "phase_label": "Main rectangular spot only; zero order excluded",
+  "onsite_reported_size_um": {
+    "x": null,
+    "y": null,
+    "note": "User-confirmed onsite BeamGage readout; kept separate from raw selected-pixel bbox conventions."
+  },
+  "metadata": {
+    "source_file": "20260716\\20260716-1.bmData",
+    "frame_key": "1",
+    "stored_data_type": "Tiff",
+    "width_px": 964,
+    "height_px": 724,
+    "raw_pixel_scale_x_um": 3.69,
+    "raw_pixel_scale_y_um": 3.69,
+    "binning_x": 2,
+    "binning_y": 2,
+    "exposure_stamp": 5.484163761138916,
+    "gain_stamp": 0.0,
+    "timestamp": "2026-07-16T13:35:38.2997243+08:00",
+    "data_dtype": "|V1",
+    "pixel_scale_x_um": 7.38,
+    "pixel_scale_y_um": 7.38
+  },
+  "background": {
+    "median": 8.545350283384323e-06,
+    "robust_sigma": 0.0014478515625
+  },
+  "roi_px": [
+    194,
+    334,
+    66,
+    35
+  ],
+  "center_px": [
+    226.58688865971365,
+    351.1966529531311
+  ],
+  "baseline_profile_widths": {
+    "size90": {
+      "x_px": 40.145768217827566,
+      "y_px": 10.325684379667507,
+      "x_um": 296.2757694475674,
+      "y_um": 76.2035507219462
+    },
+    "size50": {
+      "x_px": 47.46091866581742,
+      "y_px": 17.16581071042583,
+      "x_um": 350.2615797537325,
+      "y_um": 126.68368304294263
+    },
+    "size13p5": {
+      "x_px": 54.075097383082664,
+      "y_px": 23.343796593399816,
+      "x_um": 399.07421868715005,
+      "y_um": 172.27721885929063
+    }
+  },
+  "beamgage_saved_setup": {
+    "beam_width_type": "D4Sigma",
+    "percent_total": 0.865,
+    "manual_aperture_enabled": true,
+    "manual_aperture_shape": "Rectangle",
+    "manual_aperture_center_px": [
+      239.1293809322266,
+      342.91327695008397
+    ],
+    "manual_aperture_size_px": [
+      127.62634756453485,
+      85.32421826317643
+    ],
+    "manual_aperture_bounds_px": [
+      175,
+      300,
+      128,
+      86
+    ]
+  },
+  "percent_energy_analysis_aperture": {
+    "beam_width_type": "D4Sigma",
+    "percent_total": 0.865,
+    "manual_aperture_enabled": true,
+    "manual_aperture_shape": "Main rectangular spot only",
+    "manual_aperture_center_px": [
+      227.0,
+      351.5
+    ],
+    "manual_aperture_size_px": [
+      66,
+      35
+    ],
+    "manual_aperture_bounds_px": [
+      194,
+      334,
+      66,
+      35
+    ]
+  },
+  "main_spot_only": true,
+  "beamgage_percent_energy_reproduction": {
+    "definition": "Sort all background-subtracted pixels inside the saved manual aperture by intensity, retain pixels until their sum reaches PercentEnergy, then report the coordinate span of the retained-pixel bounding box.",
+    "percent_energy": 0.865,
+    "intensity_threshold": 0.1750488211400807,
+    "selected_pixel_count": 665,
+    "selected_energy_fraction": 0.8652235989639129,
+    "selected_bbox_global_px_inclusive": [
+      204,
+      344,
+      249,
+      359
+    ],
+    "selected_bbox_count_px": [
+      46,
+      16
+    ],
+    "selected_bbox_span_px": [
+      45,
+      15
+    ],
+    "pixel_coverage_width_x_um": 339.48,
+    "pixel_coverage_width_y_um": 118.08,
+    "width_x_um": 332.1,
+    "width_y_um": 110.7
+  },
+  "minimum_interval_percent_energy": {
+    "50": {
+      "x": {
+        "start_px": 29.0,
+        "stop_px": 52.0,
+        "count_px": 24.0,
+        "fraction": 0.5007832760250535,
+        "width_um": 177.12,
+        "global_start_px": 223.0,
+        "global_stop_px": 246.0
+      },
+      "y": {
+        "start_px": 17.0,
+        "stop_px": 25.0,
+        "count_px": 9.0,
+        "fraction": 0.504881521853968,
+        "width_um": 66.42,
+        "global_start_px": 351.0,
+        "global_stop_px": 359.0
+      }
+    },
+    "86.5": {
+      "x": {
+        "start_px": 14.0,
+        "stop_px": 54.0,
+        "count_px": 41.0,
+        "fraction": 0.8655044954700312,
+        "width_um": 302.58,
+        "global_start_px": 208.0,
+        "global_stop_px": 248.0
+      },
+      "y": {
+        "start_px": 11.0,
+        "stop_px": 25.0,
+        "count_px": 15.0,
+        "fraction": 0.8881012788094648,
+        "width_um": 110.7,
+        "global_start_px": 345.0,
+        "global_stop_px": 359.0
+      }
+    },
+    "90": {
+      "x": {
+        "start_px": 12.0,
+        "stop_px": 53.0,
+        "count_px": 42.0,
+        "fraction": 0.9024955613877828,
+        "width_um": 309.96,
+        "global_start_px": 206.0,
+        "global_stop_px": 247.0
+      },
+      "y": {
+        "start_px": 10.0,
+        "stop_px": 24.0,
+        "count_px": 15.0,
+        "fraction": 0.901657666881946,
+        "width_um": 110.7,
+        "global_start_px": 344.0,
+        "global_stop_px": 358.0
+      }
+    }
+  },
+  "profile_widths": {
+    "90": {
+      "fraction": 0.9,
+      "relative_to_flat": {
+        "x": {
+          "left_px": 204.546525199837,
+          "right_px": 248.81966216819552,
+          "width_px": 44.27313696835853,
+          "width_um": 326.7357508264859
+        },
+        "y": {
+          "left_px": 344.4147791060382,
+          "right_px": 358.13882932013263,
+          "width_px": 13.724050214094405,
+          "width_um": 101.2834905800167
+        }
+      },
+      "relative_to_peak": {
+        "x": {
+          "left_px": NaN,
+          "right_px": NaN,
+          "width_px": NaN,
+          "width_um": NaN
+        },
+        "y": {
+          "left_px": NaN,
+          "right_px": NaN,
+          "width_px": NaN,
+          "width_um": NaN
+        }
+      }
+    },
+    "86.5": {
+      "fraction": 0.865,
+      "relative_to_flat": {
+        "x": {
+          "left_px": 204.46464032388067,
+          "right_px": 248.9050625064176,
+          "width_px": 44.440422182536935,
+          "width_um": 327.97031570712255
+        },
+        "y": {
+          "left_px": 344.26478986805284,
+          "right_px": 358.25121653126706,
+          "width_px": 13.986426663214218,
+          "width_um": 103.21982877452092
+        }
+      },
+      "relative_to_peak": {
+        "x": {
+          "left_px": NaN,
+          "right_px": NaN,
+          "width_px": NaN,
+          "width_um": NaN
+        },
+        "y": {
+          "left_px": NaN,
+          "right_px": NaN,
+          "width_px": NaN,
+          "width_um": NaN
+        }
+      }
+    },
+    "50": {
+      "fraction": 0.5,
+      "relative_to_flat": {
+        "x": {
+          "left_px": 203.51955762606195,
+          "right_px": 249.86117493141026,
+          "width_px": 46.34161730534831,
+          "width_um": 342.0011357134705
+        },
+        "y": {
+          "left_px": 343.07693480604104,
+          "right_px": 359.39738808910244,
+          "width_px": 16.320453283061397,
+          "width_um": 120.4449452289931
+        }
+      },
+      "relative_to_peak": {
+        "x": {
+          "left_px": 204.41187981714336,
+          "right_px": 248.96008811484057,
+          "width_px": 44.548208297697215,
+          "width_um": 328.76577723700547
+        },
+        "y": {
+          "left_px": 344.1681479899425,
+          "right_px": 358.32363046779676,
+          "width_px": 14.155482477854264,
+          "width_um": 104.46746068656446
+        }
+      }
+    },
+    "13.5": {
+      "fraction": 0.1353352832366127,
+      "relative_to_flat": {
+        "x": {
+          "left_px": 201.9020862300148,
+          "right_px": 251.8598138535456,
+          "width_px": 49.957727623530815,
+          "width_um": 368.6880298616574
+        },
+        "y": {
+          "left_px": 341.5872882953744,
+          "right_px": 360.78592083610386,
+          "width_px": 19.198632540729477,
+          "width_um": 141.68590815058354
+        }
+      },
+      "relative_to_peak": {
+        "x": {
+          "left_px": 202.4813043812099,
+          "right_px": 250.97810344501386,
+          "width_px": 48.49679906380396,
+          "width_um": 357.90637709087326
+        },
+        "y": {
+          "left_px": 342.1207484904586,
+          "right_px": 360.3438355938324,
+          "width_px": 18.223087103373814,
+          "width_um": 134.48638282289875
+        }
+      }
+    }
+  },
+  "flat_core_asymmetry": {
+    "top_bottom": {
+      "top_mean": 0.2599273699335754,
+      "bottom_mean": 0.23776041477297744,
+      "top_over_bottom": 1.0932323203665497,
+      "difference_percent_of_pair_mean": 8.907976382690634
+    },
+    "left_right": {
+      "left_mean": 0.23960082890465856,
+      "right_mean": 0.2536535647697747,
+      "left_over_right": 0.9445987054119626,
+      "difference_percent_of_pair_mean": -5.697966828204868
+    },
+    "size90_box_px": [
+      207,
+      347,
+      40,
+      10
+    ],
+    "core_mean": 0.24662719683721662,
+    "core_std": 0.05111310113372645,
+    "core_rms_percent": 20.724843727378147
+  },
+  "outputs": {
+    "summary_json": "20260716\\analysis_20260716_1_main_spot_only\\20260716-1_percent_energy_summary.json",
+    "diagnostic_png": "20260716\\analysis_20260716_1_main_spot_only\\20260716-1_percent_energy_diagnostics.png"
+  }
+}

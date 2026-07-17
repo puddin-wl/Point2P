@@ -12,8 +12,9 @@ function phase_data = generate_initial_phase(cfg, varargin)
 %
 % Inputs:
 %   cfg must contain the same phase/grid fields as default_config.m:
-%   N, dx_doe_m, lambda_m, f_m, aperture_radius_m, input_1e2_radius_m,
-%   input_1e_radius_m, Ro_x_m, Ro_y_m, phase_sign, phase_scale_x,
+%   N, dx_doe_m, lambda_m, f_m, aperture_radius_m, input_1e2_radius_x_m,
+%   input_1e2_radius_y_m, input_1e_radius_x_m, input_1e_radius_y_m,
+%   Ro_x_m, Ro_y_m, phase_sign, phase_scale_x,
 %   phase_scale_y, phase_method, focal_dx_m.
 %
 % Outputs:
@@ -104,19 +105,21 @@ grid = struct('N', N, 'dx_doe_m', dx_m, 'extent_m', N * dx_m, ...
 end
 
 function [field, amplitude, intensity, aperture_mask] = ipg_gaussian_input_field(X_m, Y_m, cfg)
-r2_m2 = X_m.^2 + Y_m.^2;
-w_m = cfg.input_1e2_radius_m;
-intensity = exp(-2 * r2_m2 / w_m^2);
-amplitude = exp(-r2_m2 / w_m^2);
-aperture_mask = r2_m2 <= cfg.aperture_radius_m^2;
+r_x_m = cfg.input_1e2_radius_x_m;
+r_y_m = cfg.input_1e2_radius_y_m;
+elliptic_coord = (X_m.^2 ./ r_x_m.^2) + (Y_m.^2 ./ r_y_m.^2);
+intensity = exp(-2 * elliptic_coord);
+amplitude = exp(-elliptic_coord);
+aperture_r2_m2 = X_m.^2 + Y_m.^2;
+aperture_mask = aperture_r2_m2 <= cfg.aperture_radius_m^2;
 field = amplitude .* aperture_mask;
 intensity = intensity .* aperture_mask;
 amplitude = amplitude .* aperture_mask;
 end
 
 function [phase_unwrapped_rad, phase_wrapped_rad, info] = ipg_build_separable_phase_2d(X_m, Y_m, aperture_mask, cfg)
-[phase_x_rad, info_x] = ipg_romero_dickey_phase_1d(X_m, cfg.input_1e_radius_m, cfg.Ro_x_m, cfg.lambda_m, cfg.f_m);
-[phase_y_rad, info_y] = ipg_romero_dickey_phase_1d(Y_m, cfg.input_1e_radius_m, cfg.Ro_y_m, cfg.lambda_m, cfg.f_m);
+[phase_x_rad, info_x] = ipg_romero_dickey_phase_1d(X_m, cfg.input_1e_radius_x_m, cfg.Ro_x_m, cfg.lambda_m, cfg.f_m);
+[phase_y_rad, info_y] = ipg_romero_dickey_phase_1d(Y_m, cfg.input_1e_radius_y_m, cfg.Ro_y_m, cfg.lambda_m, cfg.f_m);
 phase_unwrapped_rad = cfg.phase_sign .* (cfg.phase_scale_x .* phase_x_rad + cfg.phase_scale_y .* phase_y_rad);
 phase_unwrapped_rad(~aperture_mask) = 0;
 phase_wrapped_rad = mod(phase_unwrapped_rad, 2*pi);

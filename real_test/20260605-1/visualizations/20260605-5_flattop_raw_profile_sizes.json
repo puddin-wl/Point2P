@@ -1,0 +1,130 @@
+{
+  "note": "Widths are computed from the plotted single-pixel raw profiles after background subtraction and normalization by median(flat). For each threshold, width is the outermost above-threshold span inside the plotted ROI, so internal dips do not split the measured width.",
+  "x_profile_y_px": 459,
+  "y_profile_x_px": 642,
+  "flat_level_intensity": 1449918464.0,
+  "levels": {
+    "90": {
+      "fraction_of_flat_level": 0.9,
+      "x": {
+        "left_px": 621.7329767441861,
+        "right_px": 661.3451627906977,
+        "width_px": 39.612186046511624,
+        "left_um": 4588.3893683720935,
+        "right_um": 4880.727301395349,
+        "width_um": 292.3379330232558
+      },
+      "y": {
+        "left_px": 452.54817251461986,
+        "right_px": 464.6748493975904,
+        "width_px": 12.126676882970514,
+        "left_um": 3339.8055131578944,
+        "right_um": 3429.300388554217,
+        "width_um": 89.4948753963224
+      }
+    },
+    "86.5": {
+      "fraction_of_flat_level": 0.865,
+      "x": {
+        "left_px": 621.6429372093023,
+        "right_px": 661.4352023255814,
+        "width_px": 39.792265116279054,
+        "left_um": 4587.724876604651,
+        "right_um": 4881.39179316279,
+        "width_um": 293.6669165581394
+      },
+      "y": {
+        "left_px": 452.4066630116959,
+        "right_px": 464.9663930722892,
+        "width_px": 12.559730060593267,
+        "left_um": 3338.7611730263156,
+        "right_um": 3431.451980873494,
+        "width_um": 92.6908078471783
+      }
+    },
+    "50": {
+      "fraction_of_flat_level": 0.5,
+      "x": {
+        "left_px": 620.6487306843267,
+        "right_px": 662.395137524558,
+        "width_px": 41.746406840231316,
+        "left_um": 4580.387632450331,
+        "right_um": 4888.476114931238,
+        "width_um": 308.0884824809071
+      },
+      "y": {
+        "left_px": 451.32974335472045,
+        "right_px": 466.1784903518729,
+        "width_px": 14.848746997152432,
+        "left_um": 3330.8135059578367,
+        "right_um": 3440.397258796822,
+        "width_um": 109.58375283898495
+      }
+    },
+    "13.5": {
+      "fraction_of_flat_level": 0.1353352832366127,
+      "x": {
+        "left_px": 619.2592776862515,
+        "right_px": 663.7700593611944,
+        "width_px": 44.510781674942905,
+        "left_um": 4570.133469324536,
+        "right_um": 4898.623038085615,
+        "width_um": 328.48956876107866
+      },
+      "y": {
+        "left_px": 450.07588280027187,
+        "right_px": 467.55287431885273,
+        "width_px": 17.47699151858086,
+        "left_um": 3321.560015066006,
+        "right_um": 3450.540212473133,
+        "width_um": 128.98019740712675
+      }
+    }
+  },
+  "target_size_equivalent_levels": {
+    "x_target_330um": {
+      "axis": "x",
+      "target_width_um": 330.0,
+      "target_width_px": 44.71544715447155,
+      "fraction_of_flat_level": 0.11556222488995598,
+      "left_px": 619.1630058678401,
+      "right_px": 663.8772797393467,
+      "width_px": 44.714273871506634,
+      "left_um": 4569.422983304659,
+      "right_um": 4899.414324476378,
+      "width_um": 329.99134117171894
+    },
+    "y_target_120um": {
+      "axis": "y",
+      "target_width_um": 120.0,
+      "target_width_px": 16.260162601626018,
+      "fraction_of_flat_level": 0.2746418567426971,
+      "left_px": 450.6246752917691,
+      "right_px": 466.88590005128043,
+      "width_px": 16.26122475951132,
+      "left_um": 3325.610103653256,
+      "right_um": 3445.6179423784497,
+      "width_um": 120.00783872519355
+    }
+  },
+  "flat_core_gradient_edges_px": {
+    "x": [
+      619,
+      664
+    ],
+    "y": [
+      450,
+      467
+    ]
+  },
+  "flat_core_gradient_edges_um": {
+    "x": [
+      4568.22,
+      4900.32
+    ],
+    "y": [
+      3321.0,
+      3446.46
+    ]
+  }
+}

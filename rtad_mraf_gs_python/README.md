@@ -358,6 +358,129 @@ artifacts/fixed_baseline_bg0p9_initial_compare_20260429-175148/refined_only_cent
 下一阶段建议从这个 no/weak-background baseline 出发，优先确认背景策略的
 稳定性，然后再继续测试新的目标函数、边缘约束或其他传播/制造相关参数。
 
+## 最终管线基线 (2026-06-02)
+
+将 SLM 转换管线（1024×1024 @ 17μm）纳入正式管线后，对 Phase 1 基线参数
+做了最后验证。发现 `wgs_weight_max=2.0` 虽然 RMS 数字最低（1.86%），但高
+反馈力度在平顶上引入可见的振铃（derivative sidelobe score 偏高）。将上限
+收窄到 1.5 后振铃明显减轻，剖面更平滑，尺寸也更准。
+
+最终基线参数：
+
+```text
+method = wgs
+wgs_strategy = flat_local
+num_iters = 200
+wgs_feedback_exponent = 0.8
+wgs_weight_min = 0.5
+wgs_weight_max = 1.5
+mraf_factor = 0.8
+release_level = 0.1353352832366127
+bg_mode = attenuate
+bg_factor = 0.9
+swap_phase_xy = True
+```
+
+结果位于：
+
+```text
+artifacts/20260602-141835_rtad_mraf_gs_truncI0135
+```
+
+关键诊断结果：
+
+```text
+size50_x/y = 329.95 / 121.46 um
+size13.5_x/y = 350.53 / 143.81 um
+transition_13.5_90_x/y = 20.35 / 22.17 um
+rms_nonuniformity_percent = 2.56%
+uniformity_rms_percent = 97.44%
+efficiency_e2_percent = 92.28%
+derivative_sidelobe_score_x = 3.53e-06
+derivative_sidelobe_score_y = 1.48e-06
+```
+
+与 Phase 1 基线（`wgs_weight_max=2.0`）对比：
+- RMS 从 1.86% 变为 2.56%（数值上略高，但视觉上振铃明显减轻）
+- Y 方向 sidelobe score 从 2.16e-6 降到 1.48e-6（低 31%）
+- 效率从 92.52% 略降到 92.28%（可忽略）
+- 权重波动从 std=0.318 降到 std=0.230（反馈更温和）
+
+另外确认了 `mraf_factor=0.8` 对 f=429mm 至关重要。虽然 `method=wgs` 跳过了
+MRAF 前置阶段，但每轮迭代的投影仍走 MRAF 公式（free 区域衰减）。若降到 0.4
+（f=200mm 的值），free 区域被过度压制，背景能量翻倍（6%→10%），RMS 恶化到
+3.87%，sidelobe 高出一个数量级。
+
+SLM 转换：`convert_to_slm.py` 通过复振幅 cubic 插值将 2048×2048 计算相位
+转换到 SLM 原生 1024×1024 @ 17μm。转换参数：
+```text
+dx_doe = 44.58 μm
+DOE extent = 91.29 mm
+SLM physical = 17.41 × 17.41 mm
+Crop: 390×390 px → 1024×1024 (zoom 2.63×)
+```
+
+## 光束直径升级: 5mm → 6mm (2026-06-02)
+
+在与 5mm 基线完全相同的 WGS 参数下,测试了 6mm 1/e² 直径光束。
+使用 `make_phase0.py --beam 6` 生成对应的 Romero-Dickey 初始相位。
+
+### 为什么 6mm 更好
+
+DOE 面输入振幅是高斯分布 `A(r) = exp(-r²/w²)`, 其中 `w = D_{1/e²} / 2`。
+在通光孔径边缘 r = 7.5mm 处:
+
+```text
+5mm 光束: w=2.5mm, A(7.5mm) = exp(-9)   ≈ 1.2×10⁻⁴
+6mm 光束: w=3.0mm, A(7.5mm) = exp(-6.25) ≈ 1.9×10⁻³
+```
+
+6mm 光束在孔径边缘的振幅比 5mm 高约 **16 倍**。更宽的入射光束意味着:
+
+- 更多 DOE 像素被有效照亮 → 有效数值孔径更大 → 焦面分辨率更高
+- 相位需要做的能量再分配更少 → WGS 权重修正幅度更小
+- 高斯尾部在孔径外的截断损失更少 → 背景能量降低
+- 信号区集中更多有用能量 → e⁻² 效率提高
+
+### 5mm vs 6mm 直接对比
+
+所有 WGS 参数保持一致: `mraf_factor=0.8`, `wgs_weight_max=1.5`,
+`bg_factor=0.9`, `wgs_feedback_exponent=0.8`, `num_iters=200`。
+
+| 指标 | 5mm | 6mm | 改善 |
+|------|:---:|:---:|:----:|
+| RMS nonuniformity | 2.56% | **1.69%** | ↓ 34% |
+| uniformity | 97.44% | **98.31%** | ↑ 0.87pp |
+| e⁻² 效率 | 92.28% | **95.23%** | ↑ 2.95pp |
+| size50_x (target 330) | 329.95 μm | **329.67 μm** | → |
+| size50_y (target 120) | 121.46 μm | **120.36 μm** | 更准 |
+| background fraction | 5.9% | **3.4%** | ↓ 42% |
+| sidelobe score y | 1.48e-06 | 6.22e-06 | ↑ (同量级) |
+| WGS weight std | 0.230 | **0.185** | 更温和 |
+
+### SLM 空间余量
+
+高斯光束无硬边界。6mm 1/e² 直径对应的 99% 功率直径约 9mm。
+SLM 物理尺寸 17.41×17.41 mm, 距边缘仍有 >4mm 余量。
+通光孔径 15mm 也在 SLM 范围内。**6mm 光束完全装得下, 无需担心裁剪。**
+
+### 结果位置
+
+```text
+5mm baseline: artifacts/20260602-141835_rtad_mraf_gs_truncI0135
+6mm baseline: artifacts/20260602-143659_rtad_mraf_gs_truncI0135
+6mm phase0:  artifacts/phase0_beam6mm/phase0.mat
+```
+
+### 更新后的推荐配置
+
+```text
+input_gaussian_1e2_diameter_m = 0.006   (从 0.005 改为 0.006)
+swap_phase_xy = False                    (6mm phase0 不需 XY 交换)
+phase0 来源: make_phase0.py --beam 6
+其余参数与 5mm 基线一致
+```
+
 ## Recent Trial Notes
 
 These notes summarize the parameter trials run on 2026-04-28. They are

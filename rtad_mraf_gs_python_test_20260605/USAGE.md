@@ -151,7 +151,12 @@ Final metrics:
 # 修改焦距（正式管线不要改，f=429mm 是固定的）
 # 不支持命令行覆盖焦距，需改 config_default.py
 
-# 修改光束直径（不支持命令行覆盖，需改 config_default.py 的 input_gaussian_1e2_diameter_m）
+# 圆形光束：同时覆盖 X/Y 的 1/e^2 强度直径（单位 mm）
+python run_rtad_mraf_gs_case.py --beam-diameter 6.5
+
+# 椭圆光束：分别覆盖 X/Y 的 1/e^2 强度直径（单位 mm）
+python run_rtad_mraf_gs_case.py --beam-diameter-x 6.5 --beam-diameter-y 6.3
 ```
 
-如需跑不同光束直径，改 `config_default.py` 第 10 行 `input_gaussian_1e2_diameter_m`，或生成对应光束直径的 phase0 再加载。
+`--beam-diameter` 保留为圆形光束兼容接口；指定椭圆光束时应同时传入
+`--beam-diameter-x` 和 `--beam-diameter-y`，并加载按相同 X/Y 尺寸生成的 phase0。

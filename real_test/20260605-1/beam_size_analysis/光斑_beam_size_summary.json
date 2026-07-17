@@ -1,0 +1,96 @@
+{
+  "source_file": "E:\\program\\Point2P\\real_test\\20260605-1\\光斑.bgData",
+  "width_px": 5120,
+  "height_px": 5120,
+  "raw_pixel_scale_x_um": 4.5,
+  "raw_pixel_scale_y_um": 4.5,
+  "binning_x": 1,
+  "binning_y": 1,
+  "exposure_stamp": 44.59,
+  "gain_stamp": 0.0,
+  "timestamp": "2026-06-05T14:14:21.6113714+08:00",
+  "data_dtype": "int32",
+  "pixel_scale_x_um": 4.5,
+  "pixel_scale_y_um": 4.5,
+  "background": {
+    "median": 4105176.0,
+    "robust_sigma": 12436950.2208
+  },
+  "preprocessing": {
+    "component_threshold_fraction_of_smoothed_peak": 0.05,
+    "gaussian_sigma_px": 5.0,
+    "corner_px": 200
+  },
+  "beam_region_bbox_px": [
+    1264,
+    1596,
+    2498,
+    2551
+  ],
+  "beam_region_bbox_um": [
+    5688.0,
+    7182.0,
+    11241.0,
+    11479.5
+  ],
+  "moments": {
+    "center_px": [
+      1249.4120711530736,
+      1280.5347588454629
+    ],
+    "d4sigma_x_um": 6372.92253989719,
+    "d4sigma_y_um": 6578.210387057929,
+    "major_d4sigma_um": 6601.137338082602,
+    "minor_d4sigma_um": 6349.171555384075,
+    "major_axis_angle_deg": 72.28363671013585,
+    "center_px_global": [
+      2513.4120711530736,
+      2876.534758845463
+    ],
+    "center_um_from_image_origin": [
+      11310.354320188831,
+      12944.406414804584
+    ]
+  },
+  "profile_widths": {
+    "x_fwhm": {
+      "left_px": 2129.910456383593,
+      "right_px": 2890.4678692220964,
+      "width_px": 760.5574128385033,
+      "width_um": 3422.508357773265
+    },
+    "y_fwhm": {
+      "left_px": 2483.3507194244603,
+      "right_px": 3250.6251071122538,
+      "width_px": 767.2743876877935,
+      "width_um": 3452.734744595071
+    },
+    "x_1e2": {
+      "left_px": 1850.6018634629595,
+      "right_px": 3166.223424535673,
+      "width_px": 1315.6215610727136,
+      "width_um": 5920.297024827211
+    },
+    "y_1e2": {
+      "left_px": 2174.01776028147,
+      "right_px": 3559.8307382870485,
+      "width_px": 1385.8129780055783,
+      "width_um": 6236.158401025103
+    }
+  },
+  "data_percentiles": {
+    "p0": -111238184.0,
+    "p1": -16866344.0,
+    "p5": -10574888.0,
+    "p50": 10396632.0,
+    "p95": 234791896.0,
+    "p99": 977183704.0,
+    "p99.5": 1178510296.0,
+    "p99.9": 1398711256.0,
+    "p100": 1742644184.0
+  },
+  "outputs": {
+    "summary_json": "E:\\program\\Point2P\\real_test\\20260605-1\\beam_size_analysis\\光斑_beam_size_summary.json",
+    "diagnostic_png": "E:\\program\\Point2P\\real_test\\20260605-1\\beam_size_analysis\\光斑_beam_size_diagnostics.png"
+  }
+}

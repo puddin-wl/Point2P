@@ -1,0 +1,210 @@
+{
+  "source_file": "E:\\program\\Point2P\\real_test\\20260716\\20260716-1.bmData",
+  "frame_count": 16,
+  "analysis_center_px": [
+    227,
+    351
+  ],
+  "size50_analysis_box_px": [
+    204,
+    344,
+    46,
+    16
+  ],
+  "definitions": {
+    "center_5x5": "Mean of the 5x5 pixels centered at the flat-top center divided by the mean inside the frame-1 size50 box.",
+    "middle_third": "Mean of the middle x-third of the size50 box divided by the combined left/right thirds."
+  },
+  "aggregate": {
+    "center_5x5_over_size50_box_mean": {
+      "mean": 0.7735634680206664,
+      "std": 0.008167649084535397,
+      "min": 0.7610262624486025,
+      "max": 0.791114582443258
+    },
+    "center_15x15_over_size50_box_mean": {
+      "mean": 0.9536907880806469,
+      "std": 0.0034345903366283497,
+      "min": 0.9497279246850573,
+      "max": 0.9624273654072634
+    },
+    "middle_third_over_side_thirds": {
+      "mean": 0.8981286673984901,
+      "std": 0.002165542573460413,
+      "min": 0.8936477660424859,
+      "max": 0.9011303670775163
+    },
+    "size50_box_rms_percent": {
+      "mean": 25.297400409434797,
+      "std": 0.5101457874256797,
+      "min": 24.67693525418391,
+      "max": 26.63265921202116
+    }
+  },
+  "frames": [
+    {
+      "frame_key": "1",
+      "timestamp": "2026-07-16T13:35:38.2997243+08:00",
+      "background": 8.545350283384323e-06,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7757582059997141,
+      "center_15x15_over_size50_box_mean": 0.9509010964794347,
+      "middle_third_over_side_thirds": 0.8936477660424859,
+      "size50_box_rms_percent": 25.024213581560918
+    },
+    {
+      "frame_key": "2",
+      "timestamp": "2026-07-16T13:35:38.3437243+08:00",
+      "background": -3.6619603633880615e-06,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.791114582443258,
+      "center_15x15_over_size50_box_mean": 0.9534477878660478,
+      "middle_third_over_side_thirds": 0.8988238311239778,
+      "size50_box_rms_percent": 24.67693525418391
+    },
+    {
+      "frame_key": "3",
+      "timestamp": "2026-07-16T13:35:37.6927243+08:00",
+      "background": 0.00012817420065402985,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7691982573684042,
+      "center_15x15_over_size50_box_mean": 0.9624273654072634,
+      "middle_third_over_side_thirds": 0.8982907519722119,
+      "size50_box_rms_percent": 26.63265921202116
+    },
+    {
+      "frame_key": "4",
+      "timestamp": "2026-07-16T13:35:37.7367243+08:00",
+      "background": -0.00015197740867733955,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7853940836779026,
+      "center_15x15_over_size50_box_mean": 0.9600245853766114,
+      "middle_third_over_side_thirds": 0.8987166976634233,
+      "size50_box_rms_percent": 26.071473297038537
+    },
+    {
+      "frame_key": "5",
+      "timestamp": "2026-07-16T13:35:37.7797243+08:00",
+      "background": -0.0002789306454360485,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7620929310010414,
+      "center_15x15_over_size50_box_mean": 0.9511947206011507,
+      "middle_third_over_side_thirds": 0.8953008327700752,
+      "size50_box_rms_percent": 25.542966320161337
+    },
+    {
+      "frame_key": "6",
+      "timestamp": "2026-07-16T13:35:37.8227243+08:00",
+      "background": -8.60593281686306e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7610262624486025,
+      "center_15x15_over_size50_box_mean": 0.9524474983345758,
+      "middle_third_over_side_thirds": 0.8951843223137995,
+      "size50_box_rms_percent": 25.501189168431782
+    },
+    {
+      "frame_key": "7",
+      "timestamp": "2026-07-16T13:35:37.8667243+08:00",
+      "background": -0.00021057110279798508,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7695643744179073,
+      "center_15x15_over_size50_box_mean": 0.9522165636578089,
+      "middle_third_over_side_thirds": 0.8961485809874113,
+      "size50_box_rms_percent": 25.507867469487312
+    },
+    {
+      "frame_key": "8",
+      "timestamp": "2026-07-16T13:35:37.9097243+08:00",
+      "background": -0.00018676742911338806,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7733513535329107,
+      "center_15x15_over_size50_box_mean": 0.9497279246850573,
+      "middle_third_over_side_thirds": 0.8974473313731621,
+      "size50_box_rms_percent": 24.835026317609586
+    },
+    {
+      "frame_key": "9",
+      "timestamp": "2026-07-16T13:35:37.9527243+08:00",
+      "background": -0.00024169916287064552,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.761662433293671,
+      "center_15x15_over_size50_box_mean": 0.9506043596431651,
+      "middle_third_over_side_thirds": 0.8979378025883377,
+      "size50_box_rms_percent": 25.18562404447378
+    },
+    {
+      "frame_key": "10",
+      "timestamp": "2026-07-16T13:35:37.9967243+08:00",
+      "background": 2.258317545056343e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7684658605979331,
+      "center_15x15_over_size50_box_mean": 0.9520662883994726,
+      "middle_third_over_side_thirds": 0.9006376619027494,
+      "size50_box_rms_percent": 25.476696766691877
+    },
+    {
+      "frame_key": "11",
+      "timestamp": "2026-07-16T13:35:38.0397243+08:00",
+      "background": -8.972128853201866e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7696147571735223,
+      "center_15x15_over_size50_box_mean": 0.9513201833543133,
+      "middle_third_over_side_thirds": 0.8969544313742499,
+      "size50_box_rms_percent": 25.575810861713066
+    },
+    {
+      "frame_key": "12",
+      "timestamp": "2026-07-16T13:35:38.0827243+08:00",
+      "background": -0.00020935013890266418,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7760080288582344,
+      "center_15x15_over_size50_box_mean": 0.9559380217247779,
+      "middle_third_over_side_thirds": 0.8987122750411415,
+      "size50_box_rms_percent": 25.354292091612603
+    },
+    {
+      "frame_key": "13",
+      "timestamp": "2026-07-16T13:35:38.1267243+08:00",
+      "background": -7.507298141717911e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7776813295442987,
+      "center_15x15_over_size50_box_mean": 0.9511677118079542,
+      "middle_third_over_side_thirds": 0.900390379246461,
+      "size50_box_rms_percent": 24.7895835307025
+    },
+    {
+      "frame_key": "14",
+      "timestamp": "2026-07-16T13:35:38.1697243+08:00",
+      "background": -7.873494178056717e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7803638340099432,
+      "center_15x15_over_size50_box_mean": 0.9555179061509572,
+      "middle_third_over_side_thirds": 0.9011303670775163,
+      "size50_box_rms_percent": 24.93062407323047
+    },
+    {
+      "frame_key": "15",
+      "timestamp": "2026-07-16T13:35:38.2137243+08:00",
+      "background": -2.7465634047985077e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7786946788365524,
+      "center_15x15_over_size50_box_mean": 0.9561875486509487,
+      "middle_third_over_side_thirds": 0.901017648035707,
+      "size50_box_rms_percent": 24.85391720411745
+    },
+    {
+      "frame_key": "16",
+      "timestamp": "2026-07-16T13:35:38.2567243+08:00",
+      "background": -4.5165885239839554e-05,
+      "background_robust_sigma": 0.0014478515625,
+      "center_5x5_over_size50_box_mean": 0.7770245151267675,
+      "center_15x15_over_size50_box_mean": 0.9538630471508124,
+      "middle_third_over_side_thirds": 0.8997179988631302,
+      "size50_box_rms_percent": 24.79952735792047
+    }
+  ],
+  "outputs": {
+    "summary_json": "20260716\\analysis_20260716_1_sequence\\20260716-1_hollow_sequence_summary.json",
+    "diagnostic_png": "20260716\\analysis_20260716_1_sequence\\20260716-1_hollow_sequence_diagnostics.png"
+  }
+}

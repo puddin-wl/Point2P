@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.io import savemat
+from scipy.ndimage import fourier_shift
 
 # ── reuse existing SLM conversion ──────────────────────────────────────────
 from convert_to_slm import convert_to_slm, save_outputs
@@ -46,16 +47,40 @@ def load_phase(path: str) -> tuple[np.ndarray, str]:
 
 def shift_phase(
     phase: np.ndarray,
-    shift_y_px: int,
-    shift_x_px: int,
+    shift_y_px: float,
+    shift_x_px: float,
 ) -> np.ndarray:
-    """Roll the phase array by integer pixel shifts.
+    """Shift the wrapped phase pattern by integer or fractional pixels.
 
     Positive shift_y = move phase DOWN (beam effectively moves UP relative
     to phase centre), which compensates for "top bright, bottom dark" when
     the SLM is physically too low.
+
+    Integer shifts retain the original ``np.roll`` path exactly. Fractional
+    shifts are applied to ``exp(1j*phase)`` in the Fourier domain so wrapped
+    2*pi phase discontinuities are never interpolated directly.
     """
-    return np.roll(np.roll(phase, shift_y_px, axis=0), shift_x_px, axis=1)
+    sy_integer = np.isclose(shift_y_px, round(shift_y_px))
+    sx_integer = np.isclose(shift_x_px, round(shift_x_px))
+    if sy_integer and sx_integer:
+        return np.roll(
+            np.roll(phase, int(round(shift_y_px)), axis=0),
+            int(round(shift_x_px)),
+            axis=1,
+        )
+
+    phasor = np.exp(1j * phase)
+    shifted = np.fft.ifftn(
+        fourier_shift(np.fft.fftn(phasor), shift=(shift_y_px, shift_x_px))
+    )
+    return np.mod(np.angle(shifted), 2.0 * np.pi)
+
+
+def format_shift(value: float) -> str:
+    """Format a signed pixel shift for a filesystem-safe label."""
+    if np.isclose(value, round(value)):
+        return f"{int(round(value)):+d}"
+    return f"{value:+g}".replace(".", "p")
 
 
 def add_blaze(
@@ -117,8 +142,8 @@ def main():
     print(f"dx_doe = {dx_doe*1e6:.4f} μm  "
           f"(1 px shift = {dx_doe*1e6:.1f} μm on DOE)")
 
-    shifts_y = [int(s.strip()) for s in args.shifts_y.split(",")]
-    shifts_x = [int(s.strip()) for s in args.shifts_x.split(",")]
+    shifts_y = [float(s.strip()) for s in args.shifts_y.split(",")]
+    shifts_x = [float(s.strip()) for s in args.shifts_x.split(",")]
 
     # aperture info for sanity checks
     aperture_diam_m = 15e-3
@@ -140,7 +165,7 @@ def main():
 
     for sy in shifts_y:
         for sx in shifts_x:
-            label = f"shift_Y{sy:+d}_X{sx:+d}"
+            label = f"shift_Y{format_shift(sy)}_X{format_shift(sx)}"
             print(f"\n{'─'*50}\n  {label}\n{'─'*50}")
 
             # 1) shift phase
@@ -195,10 +220,12 @@ def main():
     print(f"{'─'*22} {'─'*8} {'─'*8}  {'─'*8} {'─'*8}  {'─'*40}")
     for s in summary:
         bmp_ok = Path(s["slm_bmp"]).exists()
-        print(f"{s['label']:<22s} {s['shift_y_px']:>+4d} px "
-              f"{s['shift_x_px']:>+4d} px  "
+        sy_text = format_shift(float(s["shift_y_px"]))
+        sx_text = format_shift(float(s["shift_x_px"]))
+        print(f"{s['label']:<22s} {sy_text:>5s} px "
+              f"{sx_text:>5s} px  "
               f"{s['shift_y_um']:>+8.1f} {s['shift_x_um']:>+8.1f}  "
-              f"{'✓' if bmp_ok else '✗'} {s['slm_bmp']}")
+              f"{'OK' if bmp_ok else 'MISSING'} {s['slm_bmp']}")
     print(f"{'='*70}")
     print(f"Done. {len(summary)} SLM BMPs generated → {root}")
 

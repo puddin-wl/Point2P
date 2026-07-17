@@ -1,0 +1,96 @@
+{
+  "source_file": "20260716\\G-光斑-1.bgData",
+  "width_px": 5120,
+  "height_px": 5120,
+  "raw_pixel_scale_x_um": 4.5,
+  "raw_pixel_scale_y_um": 4.5,
+  "binning_x": 1,
+  "binning_y": 1,
+  "exposure_stamp": 4.868,
+  "gain_stamp": 0.0,
+  "timestamp": "2026-07-16T13:39:45.6231613+08:00",
+  "data_dtype": "int32",
+  "pixel_scale_x_um": 4.5,
+  "pixel_scale_y_um": 4.5,
+  "background": {
+    "median": -3308257.0,
+    "robust_sigma": 12436950.2208
+  },
+  "preprocessing": {
+    "component_threshold_fraction_of_smoothed_peak": 0.05,
+    "gaussian_sigma_px": 5.0,
+    "corner_px": 200
+  },
+  "beam_region_bbox_px": [
+    1006,
+    1077,
+    2600,
+    2635
+  ],
+  "beam_region_bbox_um": [
+    4527.0,
+    4846.5,
+    11700.0,
+    11857.5
+  ],
+  "moments": {
+    "center_px": [
+      1308.7812451839554,
+      1278.8462692880494
+    ],
+    "d4sigma_x_um": 6741.139563661351,
+    "d4sigma_y_um": 6764.9267663556,
+    "major_d4sigma_um": 6865.663680149766,
+    "minor_d4sigma_um": 6638.513312631612,
+    "major_axis_angle_deg": 48.005941504038866,
+    "center_px_global": [
+      2314.7812451839554,
+      2355.8462692880494
+    ],
+    "center_um_from_image_origin": [
+      10416.5156033278,
+      10601.308211796222
+    ]
+  },
+  "profile_widths": {
+    "x_fwhm": {
+      "left_px": 1913.0043443917853,
+      "right_px": 2731.554253472223,
+      "width_px": 818.5499090804378,
+      "width_um": 3683.4745908619702
+    },
+    "y_fwhm": {
+      "left_px": 1937.040860885839,
+      "right_px": 2678.6130104463437,
+      "width_px": 741.5721495605046,
+      "width_um": 3337.074673022271
+    },
+    "x_1e2": {
+      "left_px": 1591.374717979506,
+      "right_px": 3012.665717479641,
+      "width_px": 1421.290999500135,
+      "width_um": 6395.809497750608
+    },
+    "y_1e2": {
+      "left_px": 1667.2662863355888,
+      "right_px": 3068.4849892096113,
+      "width_px": 1401.2187028740225,
+      "width_um": 6305.484162933101
+    }
+  },
+  "data_percentiles": {
+    "p0": -127040225.0,
+    "p1": -28474081.0,
+    "p5": -22182625.0,
+    "p50": -1211105.0,
+    "p95": 246252831.0,
+    "p99": 927827231.0,
+    "p99.5": 1101890847.0,
+    "p99.9": 1303217439.0,
+    "p100": 1707967775.0
+  },
+  "outputs": {
+    "summary_json": "20260716\\analysis_G_spot_1\\G-光斑-1_beam_size_summary.json",
+    "diagnostic_png": "20260716\\analysis_G_spot_1\\G-光斑-1_beam_size_diagnostics.png"
+  }
+}

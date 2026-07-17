@@ -1,0 +1,55 @@
+{
+  "source_file": "E:\\program\\Point2P\\real_test\\20260605-1\\20260605-1.bmData",
+  "source_file_bytes": 3150561,
+  "hdf5_data_path": "/BG_DATA/1/DATA",
+  "saved_npy_shape": [
+    697936
+  ],
+  "saved_npy_dtype": "int32",
+  "png_shape_height_width": [
+    724,
+    964
+  ],
+  "png_dtype": "uint8",
+  "png_percentile_stretch": {
+    "low_percentile": 1.0,
+    "high_percentile": 99.5,
+    "low_value": -10470031.0,
+    "high_value": 14171505.0
+  },
+  "width_px": 964,
+  "height_px": 724,
+  "pixel_scale_x_um": 3.69,
+  "pixel_scale_y_um": 3.69,
+  "field_of_view_x_um": 3557.16,
+  "field_of_view_y_um": 2671.56,
+  "field_of_view_x_mm": 3.5571599999999997,
+  "field_of_view_y_mm": 2.67156,
+  "offset_x_px": 0,
+  "offset_y_px": 0,
+  "exposure_stamp": 457.1231689453125,
+  "gain_stamp": 3.7834510803222656,
+  "binning_x": 2,
+  "binning_y": 2,
+  "bin_type": "Binning",
+  "bit_encoding": "L16_12",
+  "sequence_id": 486,
+  "timestamp": "2026-06-05T11:46:27.0454528+08:00",
+  "saturated": false,
+  "data_type": "IntegerArray",
+  "data_stats": {
+    "min": -20955791.0,
+    "p1": -10470031.0,
+    "median": 540017.0,
+    "p99": 12074353.0,
+    "p99_5": 14171505.0,
+    "max": 1870675313.0,
+    "mean": 1409775.3636866417,
+    "sum": 983932978230.0
+  },
+  "outputs": {
+    "png": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\20260605-1.png",
+    "npy": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\20260605-1.npy",
+    "metadata_json": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\20260605-1_metadata.json"
+  }
+}

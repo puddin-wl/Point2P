@@ -47,3 +47,14 @@ __pycache__/
 # MATLAB transient files
 *.asv
 *.m~
+
+# IDE metadata
+**/.idea/
+
+# Camera raw data and extracted numeric arrays are large local experiment inputs.
+real_test/**/*.bmData
+real_test/**/*.bgData
+real_test/**/extracted_images/*.npy
+
+# Presentation render-check images are reproducible QA outputs.
+presentation/render_check*/

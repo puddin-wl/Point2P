@@ -1,0 +1,55 @@
+{
+  "source_file": "E:\\program\\Point2P\\real_test\\20260605-1\\Y轴无位移.bmData",
+  "source_file_bytes": 3156437,
+  "hdf5_data_path": "/BG_DATA/1/DATA",
+  "saved_npy_shape": [
+    697936
+  ],
+  "saved_npy_dtype": "int32",
+  "png_shape_height_width": [
+    724,
+    964
+  ],
+  "png_dtype": "uint8",
+  "png_percentile_stretch": {
+    "low_percentile": 1.0,
+    "high_percentile": 99.5,
+    "low_value": -7016284.0,
+    "high_value": 10809508.0
+  },
+  "width_px": 964,
+  "height_px": 724,
+  "pixel_scale_x_um": 3.69,
+  "pixel_scale_y_um": 3.69,
+  "field_of_view_x_um": 3557.16,
+  "field_of_view_y_um": 2671.56,
+  "field_of_view_x_mm": 3.5571599999999997,
+  "field_of_view_y_mm": 2.67156,
+  "offset_x_px": 0,
+  "offset_y_px": 0,
+  "exposure_stamp": 405.09259033203125,
+  "gain_stamp": 0.0,
+  "binning_x": 2,
+  "binning_y": 2,
+  "bin_type": "Binning",
+  "bit_encoding": "L16_12",
+  "sequence_id": 798,
+  "timestamp": "2026-06-05T15:41:39.0228888+08:00",
+  "saturated": false,
+  "data_type": "IntegerArray",
+  "data_stats": {
+    "min": -13832028.0,
+    "p1": -7016284.0,
+    "median": 323748.0,
+    "p99": 8188068.0,
+    "p99_5": 10809508.0,
+    "max": 1785000100.0,
+    "mean": 1564352.7833354347,
+    "sum": 1091818124190.0
+  },
+  "outputs": {
+    "png": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\Y轴无位移.png",
+    "npy": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\Y轴无位移.npy",
+    "metadata_json": "E:\\program\\Point2P\\real_test\\20260605-1\\extracted_images\\Y轴无位移_metadata.json"
+  }
+}
