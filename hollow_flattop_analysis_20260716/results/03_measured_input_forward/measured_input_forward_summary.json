@@ -1,0 +1,93 @@
+{
+  "phase_source": "E:\\program\\Point2P\\rtad_mraf_gs_python_test_20260605\\artifacts\\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\\phase_refined.npy",
+  "measured_input_source": "E:\\program\\Point2P\\real_test\\20260716\\G-光斑-1.bgData",
+  "measured_input_summary": "E:\\program\\Point2P\\real_test\\20260716\\analysis_G_spot_1\\G-光斑-1_beam_size_summary.json",
+  "assumption": "Use sqrt(background-subtracted measured intensity) as the DOE-plane amplitude and assume a flat input phase. The selected Gaussian component is centered on the V2 phase.",
+  "source_background": -3308257.0,
+  "source_background_robust_sigma": 12436950.2208,
+  "source_center_px": [
+    2314.7812451839554,
+    2355.8462692880494
+  ],
+  "source_component_bbox_px": [
+    1006,
+    1077,
+    2600,
+    2635
+  ],
+  "source_pixel_scale_um": [
+    4.5,
+    4.5
+  ],
+  "experiment_metrics": {
+    "core_mean": 1.0000000000000002,
+    "center_window_over_core_mean": 0.7735902655350819,
+    "middle_third_over_side_thirds": 0.8981295047000732,
+    "core_rms_fraction": 0.2500568176951621,
+    "top_over_bottom": 1.098676054967188,
+    "left_over_right": 0.9990411100675427,
+    "aggregate_from_existing_analysis": {
+      "center_5x5_over_size50_box_mean": {
+        "mean": 0.7735634680206664,
+        "std": 0.008167649084535397,
+        "min": 0.7610262624486025,
+        "max": 0.791114582443258
+      },
+      "center_15x15_over_size50_box_mean": {
+        "mean": 0.9536907880806469,
+        "std": 0.0034345903366283497,
+        "min": 0.9497279246850573,
+        "max": 0.9624273654072634
+      },
+      "middle_third_over_side_thirds": {
+        "mean": 0.8981286673984901,
+        "std": 0.002165542573460413,
+        "min": 0.8936477660424859,
+        "max": 0.9011303670775163
+      },
+      "size50_box_rms_percent": {
+        "mean": 25.297400409434797,
+        "std": 0.5101457874256797,
+        "min": 24.67693525418391,
+        "max": 26.63265921202116
+      }
+    }
+  },
+  "baseline_metrics": {
+    "core_mean": 1.0000000088924228,
+    "center_window_over_core_mean": 0.9989019535011567,
+    "middle_third_over_side_thirds": 0.999946436610282,
+    "core_rms_fraction": 0.0075746471199805,
+    "top_over_bottom": 1.0000000035676724,
+    "left_over_right": 0.9999999994448422
+  },
+  "baseline_score": {
+    "score": 8.033806640554019,
+    "profile_rmse_x": 0.1975226036119586,
+    "profile_rmse_y": 0.15599078646136147,
+    "scaled_center": 5.63279219915187,
+    "scaled_middle": 2.54542329775522,
+    "scaled_rms": -4.8496434115036315,
+    "scaled_profile_x": 1.3168173574130575,
+    "scaled_profile_y": 1.0399385764090765
+  },
+  "measured_amplitude_forward_metrics": {
+    "core_mean": 1.0000000034322003,
+    "center_window_over_core_mean": 0.9727361714796586,
+    "middle_third_over_side_thirds": 0.9769157321045063,
+    "core_rms_fraction": 0.05863960515826378,
+    "top_over_bottom": 1.0228656961495313,
+    "left_over_right": 0.999832966098712
+  },
+  "measured_amplitude_forward_score": {
+    "score": 6.761784189579871,
+    "profile_rmse_x": 0.1814225906356926,
+    "profile_rmse_y": 0.14513446884672998,
+    "scaled_center": 4.978647648614418,
+    "scaled_middle": 1.9696556851108271,
+    "scaled_rms": -3.828344250737966,
+    "scaled_profile_x": 1.209483937571284,
+    "scaled_profile_y": 0.9675631256448666
+  },
+  "output_figure": "E:\\program\\Point2P\\hollow_flattop_analysis_20260716\\measured_input_forward\\measured_input_forward_diagnostics.png"
+}

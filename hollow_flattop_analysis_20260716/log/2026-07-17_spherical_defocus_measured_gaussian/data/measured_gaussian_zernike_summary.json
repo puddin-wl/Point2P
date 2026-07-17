@@ -1,0 +1,86 @@
+{
+  "phase_source": "E:\\program\\Point2P\\rtad_mraf_gs_python_test_20260605\\artifacts\\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\\phase_refined.npy",
+  "measured_input_source": "E:\\program\\Point2P\\real_test\\20260716\\G-光斑-1.bgData",
+  "measured_input_summary": "E:\\program\\Point2P\\real_test\\20260716\\analysis_G_spot_1\\G-光斑-1_beam_size_summary.json",
+  "zernike": {
+    "Z40_primary_spherical_rms_waves": -0.10625,
+    "Z20_extra_defocus_rms_waves": -0.25,
+    "pupil_diameter_mm": 15.0,
+    "Z20_definition": "sqrt(3)*(2*rho^2-1)",
+    "Z40_definition": "sqrt(5)*(6*rho^4-6*rho^2+1)"
+  },
+  "experiment_metrics": {
+    "core_mean": 1.0000000000000002,
+    "center_window_over_core_mean": 0.7735902655350819,
+    "middle_third_over_side_thirds": 0.8981295047000732,
+    "core_rms_fraction": 0.2500568176951621,
+    "top_over_bottom": 1.098676054967188,
+    "left_over_right": 0.9990411100675427,
+    "aggregate_from_existing_analysis": {
+      "center_5x5_over_size50_box_mean": {
+        "mean": 0.7735634680206664,
+        "std": 0.008167649084535397,
+        "min": 0.7610262624486025,
+        "max": 0.791114582443258
+      },
+      "center_15x15_over_size50_box_mean": {
+        "mean": 0.9536907880806469,
+        "std": 0.0034345903366283497,
+        "min": 0.9497279246850573,
+        "max": 0.9624273654072634
+      },
+      "middle_third_over_side_thirds": {
+        "mean": 0.8981286673984901,
+        "std": 0.002165542573460413,
+        "min": 0.8936477660424859,
+        "max": 0.9011303670775163
+      },
+      "size50_box_rms_percent": {
+        "mean": 25.297400409434797,
+        "std": 0.5101457874256797,
+        "min": 24.67693525418391,
+        "max": 26.63265921202116
+      }
+    }
+  },
+  "ideal_gaussian_key_case": {
+    "metrics": {
+      "core_mean": 1.0000000366106423,
+      "center_window_over_core_mean": 0.7733843197619935,
+      "middle_third_over_side_thirds": 0.919467248280491,
+      "core_rms_fraction": 0.1807803809764639,
+      "top_over_bottom": 0.9999999799056432,
+      "left_over_right": 0.9999999880093045
+    },
+    "footprint": {
+      "iou_vs_ideal_v2_baseline": 0.9926497611172364,
+      "size50_x_um": 370.00000000000006,
+      "size50_y_um": 135.0
+    }
+  },
+  "measured_gaussian_key_case": {
+    "metrics": {
+      "core_mean": 0.9999999718359218,
+      "center_window_over_core_mean": 0.752873055973561,
+      "middle_third_over_side_thirds": 0.8879904069153698,
+      "core_rms_fraction": 0.2265954727392988,
+      "top_over_bottom": 1.0215522281611382,
+      "left_over_right": 0.9959337461080788
+    },
+    "footprint": {
+      "iou_vs_ideal_v2_baseline": 0.9824924012158055,
+      "size50_x_um": 375.0,
+      "size50_y_um": 137.5
+    }
+  },
+  "measured_gaussian_flat_wavefront": {
+    "metrics": {
+      "core_mean": 1.0000000034322003,
+      "center_window_over_core_mean": 0.9727361714796586,
+      "middle_third_over_side_thirds": 0.9769157321045063,
+      "core_rms_fraction": 0.05863960515826378,
+      "top_over_bottom": 1.0228656961495313,
+      "left_over_right": 0.999832966098712
+    }
+  }
+}

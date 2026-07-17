@@ -1,0 +1,15 @@
+{
+  "source_best_candidate": "E:\\program\\Point2P\\hollow_flattop_analysis_20260716\\refinement_elliptical_dip\\best_elliptical_dip.json",
+  "phase_source": "E:\\program\\Point2P\\rtad_mraf_gs_python_test_20260605\\artifacts\\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\\phase_refined.npy",
+  "model": {
+    "amplitude_dip_family": "elliptical_input_dip",
+    "amplitude_dip_depth": 0.6000000000000001,
+    "amplitude_dip_sigma_x_mm": 4.0,
+    "amplitude_dip_sigma_y_mm": 1.5
+  },
+  "center_local_amplitude_transmission_before_power_renormalization": 0.3999999999999999,
+  "center_local_intensity_transmission_before_power_renormalization": 0.15999999999999992,
+  "normalized_input_center_intensity_over_peak": 0.5894411637437864,
+  "note": "This is a phenomenological input-amplitude model that reproduces the focal hollow with the fixed V2 phase. It is not yet proof that the real laser input has this exact centered elliptical depression.",
+  "output_figure": "E:\\program\\Point2P\\hollow_flattop_analysis_20260716\\refinement_elliptical_dip\\best_input_model.png"
+}

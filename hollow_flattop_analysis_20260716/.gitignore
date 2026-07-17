@@ -1,0 +1,2 @@
+# Large reproducible numeric arrays are retained locally.
+*.npy
