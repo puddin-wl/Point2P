@@ -39,6 +39,7 @@ from shift_sweep_slm import add_blaze, shift_phase
 DEFAULT_Z40_RMS_WAVES = +0.10625
 DEFAULT_Z20_RMS_WAVES = +0.25000
 DEFAULT_PUPIL_DIAMETER_MM = 15.0
+DEFAULT_EXTENSION_WIDTH_RHO = 0.20
 
 
 def sha256_file(path: Path) -> str:
@@ -73,14 +74,20 @@ def make_zernike_compensation(
     z20_rms_waves: float,
     center_x_m: float = 0.0,
     center_y_m: float = 0.0,
+    extension_width_rho: float = DEFAULT_EXTENSION_WIDTH_RHO,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Create a centered Noll-normalized Z40+Z20 compensation map.
 
-    Returns ``(phase_rad, phase_waves, pupil_mask)``. The compensation is zero
-    outside the circular pupil. Within the pupil:
+    Returns ``(phase_rad, phase_waves, pupil_mask)``. The compensation is
+    unmodified within the normalization pupil:
 
       Z20 = sqrt(3) * (2 rho^2 - 1)
       Z40 = sqrt(5) * (6 rho^4 - 6 rho^2 + 1)
+
+    Outside ``rho=1``, the radial coordinate is smoothly saturated over
+    ``extension_width_rho`` and then held constant. The saturation polynomial
+    is C2-continuous at both ends, so the physical SLM phase has no artificial
+    circular phase step at the 15 mm normalization boundary.
     """
     ny, nx = shape
     if ny <= 0 or nx <= 0:
@@ -89,20 +96,36 @@ def make_zernike_compensation(
         raise ValueError("dx_doe_m must be positive")
     if pupil_diameter_m <= 0.0:
         raise ValueError("pupil_diameter_m must be positive")
+    if extension_width_rho <= 0.0:
+        raise ValueError("extension_width_rho must be positive")
 
     x_m = (np.arange(nx, dtype=np.float64) - nx // 2) * dx_doe_m
     y_m = (np.arange(ny, dtype=np.float64) - ny // 2) * dx_doe_m
     x_grid_m, y_grid_m = np.meshgrid(x_m - center_x_m, y_m - center_y_m)
     pupil_radius_m = 0.5 * pupil_diameter_m
-    rho2 = (x_grid_m * x_grid_m + y_grid_m * y_grid_m) / (
-        pupil_radius_m * pupil_radius_m
+    rho = np.sqrt(x_grid_m * x_grid_m + y_grid_m * y_grid_m) / (
+        pupil_radius_m
     )
-    pupil_mask = rho2 <= 1.0
+    pupil_mask = rho <= 1.0
+
+    # Preserve the exact Zernike coordinate inside the normalization pupil.
+    # Outside, use g(t)=t-t^3+0.5*t^4. It satisfies:
+    #   g(0)=0, g'(0)=1, g''(0)=0
+    #   g'(1)=0, g''(1)=0
+    # and therefore joins the original radial coordinate to a constant with
+    # continuous value, slope, and curvature.
+    t = np.clip((rho - 1.0) / extension_width_rho, 0.0, 1.0)
+    smooth_extension = t - t**3 + 0.5 * t**4
+    rho_evaluated = np.where(
+        pupil_mask,
+        rho,
+        1.0 + extension_width_rho * smooth_extension,
+    )
+    rho2 = rho_evaluated * rho_evaluated
 
     z20 = math.sqrt(3.0) * (2.0 * rho2 - 1.0)
     z40 = math.sqrt(5.0) * (6.0 * rho2 * rho2 - 6.0 * rho2 + 1.0)
     phase_waves = z40_rms_waves * z40 + z20_rms_waves * z20
-    phase_waves = np.where(pupil_mask, phase_waves, 0.0)
     phase_rad = 2.0 * np.pi * phase_waves
     return (
         phase_rad.astype(np.float64),
@@ -129,13 +152,50 @@ def phase_statistics(phase: np.ndarray) -> dict[str, Any]:
     }
 
 
+def pupil_boundary_step_rad(
+    phase_rad: np.ndarray,
+    dx_doe_m: float,
+    pupil_diameter_m: float,
+) -> float:
+    """Measure the wrapped phase step across +X at the pupil boundary."""
+    center_y = phase_rad.shape[0] // 2
+    center_x = phase_rad.shape[1] // 2
+    pupil_radius_px = 0.5 * pupil_diameter_m / dx_doe_m
+    inside_x = center_x + int(np.floor(pupil_radius_px))
+    outside_x = inside_x + 1
+    difference = np.angle(
+        np.exp(
+            1j
+            * (
+                phase_rad[center_y, outside_x]
+                - phase_rad[center_y, inside_x]
+            )
+        )
+    )
+    return float(abs(difference))
+
+
+def hard_zero_boundary_step_rad(
+    phase_rad: np.ndarray,
+    dx_doe_m: float,
+    pupil_diameter_m: float,
+) -> float:
+    """Return the counterfactual boundary step if the exterior were zero."""
+    center_y = phase_rad.shape[0] // 2
+    center_x = phase_rad.shape[1] // 2
+    pupil_radius_px = 0.5 * pupil_diameter_m / dx_doe_m
+    inside_x = center_x + int(np.floor(pupil_radius_px))
+    difference = np.angle(np.exp(-1j * phase_rad[center_y, inside_x]))
+    return float(abs(difference))
+
+
 def render_preview(
     output_path: Path,
     compensation_waves: np.ndarray,
-    pupil_mask: np.ndarray,
     phase_slm: np.ndarray,
     dx_doe_m: float,
     pupil_diameter_m: float,
+    extension_width_rho: float,
 ) -> None:
     """Render the compensation map, radial profile, and final SLM phase."""
     ny, nx = compensation_waves.shape
@@ -145,13 +205,11 @@ def render_preview(
     preview_x = np.abs(x_mm) <= preview_half_width_mm
     preview_y = np.abs(y_mm) <= preview_half_width_mm
     preview_waves = compensation_waves[np.ix_(preview_y, preview_x)]
-    preview_mask = pupil_mask[np.ix_(preview_y, preview_x)]
-    masked_waves = np.ma.masked_where(~preview_mask, preview_waves)
     center_y = ny // 2
 
     fig, axes = plt.subplots(1, 3, figsize=(17, 5.2), constrained_layout=True)
     image = axes[0].imshow(
-        masked_waves,
+        preview_waves,
         origin="lower",
         extent=[
             x_mm[preview_x][0],
@@ -161,17 +219,46 @@ def render_preview(
         ],
         cmap="coolwarm",
     )
-    axes[0].set_title("Z40 + Z20 compensation / waves")
+    pupil_radius_mm = 0.5 * pupil_diameter_m * 1e3
+    extension_radius_mm = pupil_radius_mm * (1.0 + extension_width_rho)
+    axes[0].add_patch(
+        plt.Circle(
+            (0.0, 0.0),
+            pupil_radius_mm,
+            fill=False,
+            color="black",
+            ls="--",
+            lw=1.0,
+            label="15 mm normalization pupil",
+        )
+    )
+    axes[0].add_patch(
+        plt.Circle(
+            (0.0, 0.0),
+            extension_radius_mm,
+            fill=False,
+            color="black",
+            ls=":",
+            lw=0.9,
+            label="smooth extension end",
+        )
+    )
+    axes[0].set_title("Z40 + Z20 compensation / waves\n(no hard pupil edge)")
     axes[0].set_xlabel("x / mm")
     axes[0].set_ylabel("y / mm")
+    axes[0].legend(loc="upper center", fontsize=8)
     fig.colorbar(image, ax=axes[0], label="wavefront / waves")
 
     radius_mm = x_mm
     radial = compensation_waves[center_y]
-    in_diameter = np.abs(radius_mm) <= 0.5 * pupil_diameter_m * 1e3
-    axes[1].plot(radius_mm[in_diameter], radial[in_diameter], color="black")
+    in_preview = np.abs(radius_mm) <= preview_half_width_mm
+    axes[1].plot(radius_mm[in_preview], radial[in_preview], color="black")
     axes[1].axhline(0.0, color="gray", ls=":")
-    axes[1].set_title("Horizontal pupil profile")
+    for signed_radius in (-pupil_radius_mm, pupil_radius_mm):
+        axes[1].axvline(signed_radius, color="black", ls="--", lw=0.9)
+    for signed_radius in (-extension_radius_mm, extension_radius_mm):
+        axes[1].axvline(signed_radius, color="black", ls=":", lw=0.8)
+    axes[1].set_title("Horizontal profile with smooth exterior")
     axes[1].set_xlabel("pupil coordinate / mm")
     axes[1].set_ylabel("wavefront / waves")
     axes[1].grid(True, alpha=0.25)
@@ -251,6 +338,15 @@ def parse_args() -> argparse.Namespace:
         "--pupil-diameter-mm", type=float, default=DEFAULT_PUPIL_DIAMETER_MM
     )
     parser.add_argument(
+        "--extension-width-rho",
+        type=float,
+        default=DEFAULT_EXTENSION_WIDTH_RHO,
+        help=(
+            "C2 smooth-extension width outside the normalization pupil, in "
+            "normalized radius (default: 0.20)"
+        ),
+    )
+    parser.add_argument(
         "--zernike-center-x-mm", type=float, default=0.0,
         help="Zernike pupil center relative to the computational grid",
     )
@@ -298,6 +394,7 @@ def main() -> int:
         args.z20,
         args.zernike_center_x_mm * 1e-3,
         args.zernike_center_y_mm * 1e-3,
+        args.extension_width_rho,
     )
 
     shifted_v2 = shift_phase(
@@ -348,10 +445,10 @@ def main() -> int:
     render_preview(
         preview_path,
         compensation_waves,
-        pupil_mask,
         phase_slm,
         dx_doe_m,
         pupil_diameter_m,
+        args.extension_width_rho,
     )
 
     zero_reference: dict[str, Any] | None = None
@@ -439,7 +536,35 @@ def main() -> int:
             "pupil_center_y_mm": args.zernike_center_y_mm,
             "Z20_definition": "sqrt(3)*(2*rho^2-1)",
             "Z40_definition": "sqrt(5)*(6*rho^4-6*rho^2+1)",
-            "outside_pupil": "zero compensation",
+            "outside_pupil": (
+                "C2-continuous radial-coordinate saturation followed by a "
+                "constant piston; no hard phase step"
+            ),
+            "extension_width_rho": args.extension_width_rho,
+            "extension_width_mm": (
+                0.5
+                * args.pupil_diameter_mm
+                * args.extension_width_rho
+            ),
+            "extension_end_radius_mm": (
+                0.5
+                * args.pupil_diameter_mm
+                * (1.0 + args.extension_width_rho)
+            ),
+            "sampled_wrapped_step_across_pupil_boundary_rad": (
+                pupil_boundary_step_rad(
+                    compensation_rad,
+                    dx_doe_m,
+                    pupil_diameter_m,
+                )
+            ),
+            "counterfactual_hard_zero_boundary_step_rad": (
+                hard_zero_boundary_step_rad(
+                    compensation_rad,
+                    dx_doe_m,
+                    pupil_diameter_m,
+                )
+            ),
             "wavefront_min_waves_inside_pupil": float(np.min(in_pupil_waves)),
             "wavefront_max_waves_inside_pupil": float(np.max(in_pupil_waves)),
             "wavefront_mean_waves_inside_pupil": float(np.mean(in_pupil_waves)),
@@ -501,6 +626,11 @@ def main() -> int:
                 f"Z20 compensation: {args.z20:+.5f} RMS waves",
                 f"Pupil diameter: {args.pupil_diameter_mm:.3f} mm",
                 (
+                    "Outside-pupil extension: C2 smooth over "
+                    f"{args.extension_width_rho:.3f} rho "
+                    f"({0.5 * args.pupil_diameter_mm * args.extension_width_rho:.3f} mm)"
+                ),
+                (
                     "Installation shift: "
                     f"X={args.install_shift_x:+g}, Y={args.install_shift_y:+g} "
                     "computational pixels"
@@ -509,6 +639,8 @@ def main() -> int:
                 "",
                 "The Zernike compensation is added after shifting the V2 pattern and",
                 "before adding the blaze grating. It remains centered on the optical pupil.",
+                "The 15 mm normalization boundary has no hard phase step; the exterior",
+                "is smoothly extended to a constant piston phase.",
                 "This first coefficient pair comes from simulation and must be fine-tuned",
                 "experimentally. Astigmatism and coma are not included.",
             ]

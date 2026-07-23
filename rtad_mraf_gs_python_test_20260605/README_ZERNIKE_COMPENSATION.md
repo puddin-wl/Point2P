@@ -28,6 +28,11 @@ V2 phase_refined
 Zernike 补偿在安装平移之后加入，因此安装补偿只移动矩形整形相位，而球差
 补偿仍以实际光束/场镜轴心为中心。
 
+15 mm 是 Zernike 系数的归一化 pupil，并不是 6.5 mm Gaussian 光斑边界。
+程序在 `rho<=1` 内严格保持原 Z40/Z20 定义；在 pupil 外默认用宽度
+`0.20 rho`（物理宽度 1.5 mm）的 C2 连续径向延拓，再保持为常量活塞相位。
+因此不会在 SLM 上生成“15 mm 圆外突然清零”的人工圆形相位跳变。
+
 ## 当前基准命令
 
 ```powershell
@@ -35,6 +40,7 @@ D:\software\anaconda\envs\slmrtad\python.exe export_zernike_compensated_slm.py `
   artifacts\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\phase_refined.npy `
   --out artifacts\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\SLM_LOAD_ZERNIKE_COMP_BASELINE_20260723 `
   --z40 0.10625 --z20 0.25000 `
+  --extension-width-rho 0.20 `
   --install-shift-x 5 --install-shift-y 5 `
   --blaze-x 200 --blaze-y 200 `
   --verify-zero-reference artifacts\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\SLM_LOAD_20260715\phase_20260715_targetExpX330_v2_shiftX+5_Y+5.bmp

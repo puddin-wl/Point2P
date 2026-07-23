@@ -27,7 +27,7 @@ class ZernikeCompensationTests(unittest.TestCase):
         self.assertTrue(mask[50, 50])
         self.assertAlmostEqual(float(waves[50, 50]), expected, places=12)
 
-    def test_compensation_is_zero_outside_pupil(self) -> None:
+    def test_compensation_is_smoothly_extended_outside_pupil(self) -> None:
         phase_rad, waves, mask = make_zernike_compensation(
             (101, 101),
             dx_doe_m=0.1e-3,
@@ -35,8 +35,31 @@ class ZernikeCompensationTests(unittest.TestCase):
             z40_rms_waves=0.10625,
             z20_rms_waves=0.25,
         )
-        self.assertTrue(np.all(waves[~mask] == 0.0))
-        self.assertTrue(np.all(phase_rad[~mask] == 0.0))
+        self.assertTrue(np.any(waves[~mask] != 0.0))
+        self.assertTrue(np.any(phase_rad[~mask] != 0.0))
+
+        center = waves.shape[0] // 2
+        # extension_width_rho=0.2, so samples beyond rho=1.2 are constant
+        self.assertAlmostEqual(
+            float(waves[center, 100]),
+            float(waves[0, 0]),
+            places=12,
+        )
+
+    def test_no_hard_step_at_normalization_boundary(self) -> None:
+        phase_rad, _, _ = make_zernike_compensation(
+            (401, 401),
+            dx_doe_m=0.025e-3,
+            pupil_diameter_m=6e-3,
+            z40_rms_waves=0.10625,
+            z20_rms_waves=0.25,
+        )
+        center = phase_rad.shape[0] // 2
+        radius_px = int((3e-3) / (0.025e-3))
+        inside = phase_rad[center, center + radius_px]
+        outside = phase_rad[center, center + radius_px + 1]
+        wrapped_step = abs(float(np.angle(np.exp(1j * (outside - inside)))))
+        self.assertLess(wrapped_step, 0.25)
 
     def test_nominal_negative_aberration_cancels_positive_map(self) -> None:
         phase_rad, _, mask = make_zernike_compensation(

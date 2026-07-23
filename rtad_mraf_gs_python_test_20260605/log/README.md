@@ -17,6 +17,8 @@
 - 首张直接加载BMP位于
   `artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/SLM_LOAD_ZERNIKE_COMP_BASELINE_20260723`。
 - 新程序的零Zernike输出与历史X+5/Y+5基准逐像素完全一致。
+- 15 mm仅作为Zernike归一化pupil；圆外硬清零已改为C2连续相位延拓，不再
+  向SLM引入人工圆形相位跳变。
 
 ## 2026-07-16 补充状态
 
