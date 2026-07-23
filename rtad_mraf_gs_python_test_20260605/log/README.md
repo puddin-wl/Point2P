@@ -7,6 +7,16 @@
 - `WORK_LOG_20260713.txt`：生产基线、测试目录、SLM大相位位移、raised-cosine尺寸换算和H50扫描。
 - `WORK_LOG_20260715.txt`：现场实验、bmData分析、尺寸闭环、V2选择和X/Y安装补偿最终结论。
 - `WORK_LOG_20260716.txt`：V2的Y/X扫描、高功率中心空心诊断、6.5/6.7 mm输入光对比，以及X+7.5/Y+5候选相位。
+- `WORK_LOG_20260723.txt`：正球差/正离焦SLM补偿导出程序、首张实验基准相位、哈希和回归验证。
+
+## 2026-07-23 补偿状态
+
+- 已确认实验凹陷按负球差处理，首张SLM补偿采用
+  `Z40=+0.10625`、`Z20=+0.25000` RMS waves。
+- 已新增 `export_zernike_compensated_slm.py`，第一轮不包含像散和彗差。
+- 首张直接加载BMP位于
+  `artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/SLM_LOAD_ZERNIKE_COMP_BASELINE_20260723`。
+- 新程序的零Zernike输出与历史X+5/Y+5基准逐像素完全一致。
 
 ## 2026-07-16 补充状态
 

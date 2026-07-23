@@ -160,3 +160,11 @@ python run_rtad_mraf_gs_case.py --beam-diameter-x 6.5 --beam-diameter-y 6.3
 
 `--beam-diameter` 保留为圆形光束兼容接口；指定椭圆光束时应同时传入
 `--beam-diameter-x` 和 `--beam-diameter-y`，并加载按相同 X/Y 尺寸生成的 phase0。
+
+## 球差与离焦补偿相位
+
+2026-07-23 起，使用 `export_zernike_compensated_slm.py` 在 V2 上叠加实验
+补偿。当前首个基准为 `Z40=+0.10625`、`Z20=+0.25000` RMS waves，安装补偿
+保持 `X+5/Y+5`，闪耀光栅保持焦面 `X+200/Y+200 µm`。
+
+完整命令、处理顺序和输出说明见 `README_ZERNIKE_COMPENSATION.md`。
