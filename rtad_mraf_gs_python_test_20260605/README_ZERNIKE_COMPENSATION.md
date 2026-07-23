@@ -61,3 +61,18 @@ D:\software\anaconda\envs\slmrtad\python.exe export_zernike_compensated_slm.py `
 - `README_EXPERIMENT.txt`：现场简要说明。
 
 第一轮不加入像散和彗差。
+
+## Y方向整幅相位平移扫描
+
+当需要检查补偿相位与实际光束的相对位置时，使用
+`export_zernike_compensated_y_sweep.py`。该脚本先合成`V2 + Z40/Z20`，再把
+完整合成相位一起平移，最后加入闪耀光栅。因此球差补偿中心会随Y平移一起移动。
+
+当前首轮固定`X=+5`，输出：
+
+```text
+Y = -10, -5, 0, +5, +10, +15, +20 computational pixels
+```
+
+这与单张基准导出器的“只平移V2、Zernike保持光轴居中”用途不同；扫描目录的
+`manifest.json`会明确记录这一点，避免混用。
