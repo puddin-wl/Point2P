@@ -1,0 +1,124 @@
+{
+  "status": "exploratory_not_mainline",
+  "phase_source": "E:\\program\\Point2P\\rtad_mraf_gs_python_test_20260605\\artifacts\\run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm\\phase_refined.npy",
+  "pupil_diameter_mm": 15.0,
+  "definitions": {
+    "astig_0": "sqrt(6)*(x_n^2-y_n^2)",
+    "astig_45": "2*sqrt(6)*x_n*y_n",
+    "coma_x": "sqrt(8)*(3*rho^2-2)*x_n",
+    "coma_y": "sqrt(8)*(3*rho^2-2)*y_n"
+  },
+  "cases": [
+    {
+      "name": "No added aberration",
+      "coefficients_rms_waves": {},
+      "metrics": {
+        "core_mean": 1.0000000034322003,
+        "center_window_over_core_mean": 0.9727361714796586,
+        "middle_third_over_side_thirds": 0.9769157321045063,
+        "core_rms_fraction": 0.05863960515826378,
+        "top_over_bottom": 1.0228656961495313,
+        "left_over_right": 0.999832966098712
+      }
+    },
+    {
+      "name": "Astig 0 deg  +0.10",
+      "coefficients_rms_waves": {
+        "astig_0": 0.1
+      },
+      "metrics": {
+        "core_mean": 1.0000000274485843,
+        "center_window_over_core_mean": 1.0431919894790165,
+        "middle_third_over_side_thirds": 0.9977349679948762,
+        "core_rms_fraction": 0.09585655739859252,
+        "top_over_bottom": 1.0147394152505873,
+        "left_over_right": 1.0003647324698204
+      }
+    },
+    {
+      "name": "Astig 0 deg  -0.10",
+      "coefficients_rms_waves": {
+        "astig_0": -0.1
+      },
+      "metrics": {
+        "core_mean": 0.9999999742579191,
+        "center_window_over_core_mean": 0.9271779463574195,
+        "middle_third_over_side_thirds": 0.9619677782424215,
+        "core_rms_fraction": 0.12414082047605182,
+        "top_over_bottom": 1.036787509585386,
+        "left_over_right": 0.9984094506602246
+      }
+    },
+    {
+      "name": "Astig 45 deg +0.10",
+      "coefficients_rms_waves": {
+        "astig_45": 0.1
+      },
+      "metrics": {
+        "core_mean": 1.0000000623718006,
+        "center_window_over_core_mean": 0.9763395203416787,
+        "middle_third_over_side_thirds": 0.9803266106086393,
+        "core_rms_fraction": 0.05393512656060015,
+        "top_over_bottom": 1.021646039278526,
+        "left_over_right": 0.994223442269767
+      }
+    },
+    {
+      "name": "Coma X       +0.10",
+      "coefficients_rms_waves": {
+        "coma_x": 0.1
+      },
+      "metrics": {
+        "core_mean": 0.9999999664288425,
+        "center_window_over_core_mean": 0.9758281568752315,
+        "middle_third_over_side_thirds": 0.9641283692110463,
+        "core_rms_fraction": 0.15627513471376334,
+        "top_over_bottom": 1.0234304946388886,
+        "left_over_right": 1.2718256863037611
+      }
+    },
+    {
+      "name": "Coma X       -0.10",
+      "coefficients_rms_waves": {
+        "coma_x": -0.1
+      },
+      "metrics": {
+        "core_mean": 1.0000000642832947,
+        "center_window_over_core_mean": 0.9479202490756894,
+        "middle_third_over_side_thirds": 0.9601340135868471,
+        "core_rms_fraction": 0.15697045772022472,
+        "top_over_bottom": 1.0249037185861216,
+        "left_over_right": 0.7854970688746682
+      }
+    },
+    {
+      "name": "Coma Y       +0.10",
+      "coefficients_rms_waves": {
+        "coma_y": 0.1
+      },
+      "metrics": {
+        "core_mean": 0.9999999310951811,
+        "center_window_over_core_mean": 0.902596332109436,
+        "middle_third_over_side_thirds": 0.9652527344640672,
+        "core_rms_fraction": 0.20366882595195868,
+        "top_over_bottom": 1.4762236095106143,
+        "left_over_right": 0.9989706945792507
+      }
+    },
+    {
+      "name": "Astig 0 +0.10, Coma X +0.06",
+      "coefficients_rms_waves": {
+        "astig_0": 0.1,
+        "coma_x": 0.06
+      },
+      "metrics": {
+        "core_mean": 0.9999999932279245,
+        "center_window_over_core_mean": 1.0480566520959993,
+        "middle_third_over_side_thirds": 0.9914497351175567,
+        "core_rms_fraction": 0.12297713217646324,
+        "top_over_bottom": 1.0133005868406955,
+        "left_over_right": 1.1307822978381405
+      }
+    }
+  ]
+}

@@ -6,6 +6,11 @@
 
 用途：记录2026-07-17排查结束后的最终判断、排除项、球差主案例和后续实验方向。
 
+`ADDENDUM_20260721.md`
+
+用途：记录真实16帧尺寸复算、12 mm入瞳、Zernike符号复核，以及转入SLM
+正球差补偿的决定。
+
 ## 本轮归档日志
 
 `../log/2026-07-17_spherical_defocus_measured_gaussian`
@@ -97,6 +102,26 @@
 - `../results/11_measured_pupil_13_14mm/measured_pupil_13_14mm_scan.json`
 - `../results/11_measured_pupil_13_14mm/SUMMARY_MEASURED_PUPIL_13_14MM.md`
 
+### 实测Gaussian的12 mm入瞳
+
+`../results/12_measured_pupil_12mm_1m/measured_pupil_12mm_z1m_comparison.png`
+
+用途：在1 m场镜距离比较无圆孔与12 mm圆孔。12 mm圆孔截去约`0.3085%`
+功率，中心比由`0.9849`变为`0.9903`，仍未产生中心空洞。
+
+### Zernike反号案例
+
+`../results/13_measured_input_positive_zernike_key_case/EXPERIMENT_VS_MEASURED_GAUSSIAN_ZERNIKE.png`
+
+用途：复核`Z40=+0.10625`、`Z20=+0.25000` RMS waves会把负号案例的中心
+凹陷变为中心隆起，为后续正球差SLM补偿提供符号依据。
+
+### 像散和彗差探索（暂停）
+
+`../results/exploratory_14_astigmatism_coma/ASTIGMATISM_COMA_EXPLORATORY_MONTAGE.png`
+
+用途：保存低阶非对称像差的独立探索。当前不进入第一轮SLM补偿。
+
 ## 球差 + 离焦扫描
 
 - `05_zernike_spherical_defocus`：大范围粗扫，只用于确定数量级；大球差会破坏
@@ -112,6 +137,12 @@
   429 mm场镜后焦面；用于直接判断截断是否会制造中心空洞。
 - `11_measured_pupil_13_14mm`：只用实测Gaussian测试14 mm和13 mm圆孔；
   两者均未产生实验量级的中心空洞。
+- `12_measured_pupil_12mm_1m`：只用实测Gaussian测试1 m处12 mm圆孔；仍未
+  产生中心空洞。
+- `13_measured_input_positive_zernike_key_case`：主Z40/Z20案例同时反号的符号
+  复核结果。
+- `exploratory_14_astigmatism_coma`：像散/彗差独立探索；已暂停，不属于当前
+  补偿主线。
 
 每个细扫目录中：
 

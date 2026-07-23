@@ -41,6 +41,31 @@
       "max": 26.63265921202116
     }
   },
+  "average_beamgage_percent_energy_reproduction": {
+    "definition": "Sort all background-subtracted pixels inside the saved manual aperture by intensity, retain pixels until their sum reaches PercentEnergy, then report the coordinate span of the retained-pixel bounding box.",
+    "percent_energy": 0.865,
+    "intensity_threshold": 0.17257690499536693,
+    "selected_pixel_count": 671,
+    "selected_energy_fraction": 0.8653017580560248,
+    "selected_bbox_global_px_inclusive": [
+      204,
+      343,
+      249,
+      359
+    ],
+    "selected_bbox_count_px": [
+      46,
+      17
+    ],
+    "selected_bbox_span_px": [
+      45,
+      16
+    ],
+    "pixel_coverage_width_x_um": 339.48,
+    "pixel_coverage_width_y_um": 125.46,
+    "width_x_um": 332.1,
+    "width_y_um": 118.08
+  },
   "frames": [
     {
       "frame_key": "1",
@@ -204,7 +229,7 @@
     }
   ],
   "outputs": {
-    "summary_json": "20260716\\analysis_20260716_1_main_spot_only_sequence\\20260716-1_hollow_sequence_summary.json",
-    "diagnostic_png": "20260716\\analysis_20260716_1_main_spot_only_sequence\\20260716-1_hollow_sequence_diagnostics.png"
+    "summary_json": "E:\\program\\Point2P\\real_test\\20260716\\analysis_20260716_1_main_spot_only_sequence\\20260716-1_hollow_sequence_summary.json",
+    "diagnostic_png": "E:\\program\\Point2P\\real_test\\20260716\\analysis_20260716_1_main_spot_only_sequence\\20260716-1_hollow_sequence_diagnostics.png"
   }
 }

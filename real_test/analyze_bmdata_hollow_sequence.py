@@ -15,6 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from analyze_rect_flattop_size import load_spiricon_frame, robust_background
+from analyze_bmdata_percent_energy import beamgage_percent_energy_bbox
 
 
 def stats(values: list[float]) -> dict[str, float]:
@@ -69,6 +70,8 @@ def run(path: Path, percent_summary: Path, outdir: Path) -> dict[str, Any]:
     average = np.mean(np.stack(signals, axis=0), axis=0)
     sx = float(setup["metadata"]["pixel_scale_x_um"])
     sy = float(setup["metadata"]["pixel_scale_y_um"])
+    percent_energy_setup = setup["percent_energy_analysis_aperture"]
+    average_percent_energy = beamgage_percent_energy_bbox(average, percent_energy_setup, sx, sy)
     center5_values = [r["center_5x5_over_size50_box_mean"] for r in records]
     center15_values = [r["center_15x15_over_size50_box_mean"] for r in records]
     middle_values = [r["middle_third_over_side_thirds"] for r in records]
@@ -88,6 +91,7 @@ def run(path: Path, percent_summary: Path, outdir: Path) -> dict[str, Any]:
             "middle_third_over_side_thirds": stats(middle_values),
             "size50_box_rms_percent": stats(rms_values),
         },
+        "average_beamgage_percent_energy_reproduction": average_percent_energy,
         "frames": records,
     }
 
@@ -124,16 +128,89 @@ def run(path: Path, percent_summary: Path, outdir: Path) -> dict[str, Any]:
     axes[0, 0].set_ylabel("y / um")
     fig.colorbar(im, ax=axes[0, 0], label="I / mean(size50 box)")
 
-    indices = np.arange(1, len(records) + 1)
-    axes[0, 1].plot(indices, center5_values, "o-", label="center 5x5 / box mean")
-    axes[0, 1].plot(indices, middle_values, "s-", label="middle third / side thirds")
-    axes[0, 1].axhline(1.0, color="gray", ls=":")
-    axes[0, 1].set_title("Center-depression stability")
-    axes[0, 1].set_xlabel("frame")
-    axes[0, 1].set_ylabel("ratio")
-    axes[0, 1].set_xticks(indices)
-    axes[0, 1].grid(True, alpha=0.25)
-    axes[0, 1].legend()
+    ax0, ay0, aw, ah = percent_energy_setup["manual_aperture_bounds_px"]
+    measure_margin_x, measure_margin_y = 6, 6
+    mx0 = max(0, ax0 - measure_margin_x)
+    mx1 = min(average.shape[1], ax0 + aw + measure_margin_x)
+    my0 = max(0, ay0 - measure_margin_y)
+    my1 = min(average.shape[0], ay0 + ah + measure_margin_y)
+    measure_extent = [mx0 * sx, mx1 * sx, my1 * sy, my0 * sy]
+    axes[0, 1].imshow(
+        normalized[my0:my1, mx0:mx1],
+        origin="upper",
+        cmap="turbo",
+        extent=measure_extent,
+        vmin=0.45,
+        vmax=1.45,
+        aspect="equal",
+    )
+    axes[0, 1].set_title("Average BeamGage PercentEnergy size (86.5%)")
+    axes[0, 1].set_xlabel("x / um")
+    axes[0, 1].set_ylabel("y / um")
+    axes[0, 1].add_patch(
+        plt.Rectangle(
+            (ax0 * sx, ay0 * sy),
+            aw * sx,
+            ah * sy,
+            fill=False,
+            ec="white",
+            lw=1.3,
+            ls="--",
+            label="main-spot analysis aperture",
+        )
+    )
+    bx0, by0, bx1, by1 = average_percent_energy["selected_bbox_global_px_inclusive"]
+    box_x0, box_x1 = bx0 * sx, bx1 * sx
+    box_y0, box_y1 = by0 * sy, by1 * sy
+    width_x = average_percent_energy["width_x_um"]
+    width_y = average_percent_energy["width_y_um"]
+    axes[0, 1].add_patch(
+        plt.Rectangle(
+            (box_x0, box_y0),
+            width_x,
+            width_y,
+            fill=False,
+            ec="magenta",
+            lw=1.5,
+            label="average 86.5% size",
+        )
+    )
+    arrow_y = box_y0 - 2.0 * sy
+    arrow_x = box_x1 + 2.0 * sx
+    axes[0, 1].annotate(
+        "",
+        xy=(box_x1, arrow_y),
+        xytext=(box_x0, arrow_y),
+        arrowprops={"arrowstyle": "<->", "color": "white", "lw": 1.6},
+    )
+    axes[0, 1].text(
+        0.5 * (box_x0 + box_x1),
+        arrow_y - 0.7 * sy,
+        f"X = {width_x:.2f} um",
+        ha="center",
+        va="bottom",
+        color="white",
+        fontsize=10,
+        bbox={"facecolor": "black", "alpha": 0.55, "edgecolor": "none", "pad": 2},
+    )
+    axes[0, 1].annotate(
+        "",
+        xy=(arrow_x, box_y1),
+        xytext=(arrow_x, box_y0),
+        arrowprops={"arrowstyle": "<->", "color": "white", "lw": 1.6},
+    )
+    axes[0, 1].text(
+        arrow_x + 0.7 * sx,
+        0.5 * (box_y0 + box_y1),
+        f"Y = {width_y:.2f} um",
+        ha="left",
+        va="center",
+        rotation=90,
+        color="white",
+        fontsize=10,
+        bbox={"facecolor": "black", "alpha": 0.55, "edgecolor": "none", "pad": 2},
+    )
+    axes[0, 1].legend(loc="lower right", fontsize=8)
 
     axes[1, 0].plot(x_axis, profile_x, color="black")
     axes[1, 0].axhline(1.0, color="gray", ls=":")

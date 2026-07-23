@@ -45,6 +45,95 @@ def compact_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def render_comparison(
+    panels: list[tuple[str, np.ndarray, np.ndarray, np.ndarray, dict[str, Any], dict[str, float] | None]],
+    experiment: dict[str, Any],
+    output_path: Path,
+    colors: list[str],
+    figsize: tuple[float, float],
+    suptitle: str,
+) -> None:
+    """Render image maps and matched band profiles for selected panels."""
+    fig, axes = plt.subplots(
+        2,
+        len(panels),
+        figsize=figsize,
+        constrained_layout=True,
+        squeeze=False,
+    )
+    for column, (title, image, px_um, py_um, metrics, footprint) in enumerate(
+        panels
+    ):
+        ax = axes[0, column]
+        xmask = np.abs(px_um) <= 230.0
+        ymask = np.abs(py_um) <= 105.0
+        roi = image[np.ix_(ymask, xmask)]
+        xa = px_um[xmask]
+        ya = py_um[ymask]
+        im = ax.imshow(
+            roi,
+            origin="upper",
+            extent=[xa[0], xa[-1], ya[-1], ya[0]],
+            cmap="turbo",
+            vmin=0.30,
+            vmax=1.55,
+            aspect="equal",
+        )
+        footprint_text = (
+            ""
+            if footprint is None
+            else f"\nIoU={footprint['iou_vs_ideal_v2_baseline']:.3f}"
+        )
+        ax.set_title(
+            f"{title}\ncenter={metrics['center_window_over_core_mean']:.3f}, "
+            f"middle/sides={metrics['middle_third_over_side_thirds']:.3f}, "
+            f"\nRMS={100.0 * metrics['core_rms_fraction']:.1f}%"
+            f"{footprint_text}",
+            fontsize=12,
+        )
+        ax.set_xlabel("x / um")
+        ax.set_ylabel("y / um")
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+
+        profile_ax = axes[1, column]
+        profile_x_axis, profile_x = band_profile(
+            image,
+            px_um,
+            py_um,
+            "x",
+            experiment["center_window_um"][1],
+        )
+        profile_y_axis, profile_y = band_profile(
+            image,
+            px_um,
+            py_um,
+            "y",
+            experiment["center_window_um"][0],
+        )
+        profile_ax.plot(
+            profile_x_axis,
+            profile_x,
+            color=colors[column],
+            label="x profile",
+        )
+        profile_ax.plot(
+            profile_y_axis,
+            profile_y,
+            color=colors[column],
+            ls="--",
+            label="y profile",
+        )
+        profile_ax.set_xlim(-210.0, 210.0)
+        profile_ax.set_ylim(0.0, 1.65)
+        profile_ax.set_xlabel("position / um")
+        profile_ax.set_ylabel("normalized intensity")
+        profile_ax.grid(True, alpha=0.25)
+        profile_ax.legend()
+    fig.suptitle(suptitle, fontsize=16)
+    fig.savefig(output_path, dpi=180)
+    plt.close(fig)
+
+
 def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     experiment = load_experimental_target(
@@ -183,83 +272,27 @@ def main() -> None:
             footprint_metrics(measured_flat),
         ),
     ]
-    fig, axes = plt.subplots(2, 4, figsize=(22, 9), constrained_layout=True)
-    colors = ["black", "#1b9e77", "#d95f02", "#7570b3"]
-    for column, (title, image, px_um, py_um, metrics, footprint) in enumerate(
-        panels
-    ):
-        ax = axes[0, column]
-        xmask = np.abs(px_um) <= 230.0
-        ymask = np.abs(py_um) <= 105.0
-        roi = image[np.ix_(ymask, xmask)]
-        xa = px_um[xmask]
-        ya = py_um[ymask]
-        im = ax.imshow(
-            roi,
-            origin="upper",
-            extent=[xa[0], xa[-1], ya[-1], ya[0]],
-            cmap="turbo",
-            vmin=0.30,
-            vmax=1.55,
-            aspect="equal",
-        )
-        footprint_text = (
-            ""
-            if footprint is None
-            else f"\nIoU={footprint['iou_vs_ideal_v2_baseline']:.3f}"
-        )
-        ax.set_title(
-            f"{title}\ncenter={metrics['center_window_over_core_mean']:.3f}, "
-            f"middle/sides={metrics['middle_third_over_side_thirds']:.3f}, "
-            f"\nRMS={100.0 * metrics['core_rms_fraction']:.1f}%"
-            f"{footprint_text}",
-            fontsize=12,
-        )
-        ax.set_xlabel("x / um")
-        ax.set_ylabel("y / um")
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
-
-        profile_ax = axes[1, column]
-        profile_x_axis, profile_x = band_profile(
-            image,
-            px_um,
-            py_um,
-            "x",
-            experiment["center_window_um"][1],
-        )
-        profile_y_axis, profile_y = band_profile(
-            image,
-            px_um,
-            py_um,
-            "y",
-            experiment["center_window_um"][0],
-        )
-        profile_ax.plot(
-            profile_x_axis,
-            profile_x,
-            color=colors[column],
-            label="x profile",
-        )
-        profile_ax.plot(
-            profile_y_axis,
-            profile_y,
-            color=colors[column],
-            ls="--",
-            label="y profile",
-        )
-        profile_ax.set_xlim(-210.0, 210.0)
-        profile_ax.set_ylim(0.0, 1.65)
-        profile_ax.set_xlabel("position / um")
-        profile_ax.set_ylabel("normalized intensity")
-        profile_ax.grid(True, alpha=0.25)
-        profile_ax.legend()
-    fig.suptitle(
-        "Key Zernike case with measured 2026-07-16 Gaussian input\n"
-        f"Z40={Z40_RMS_WAVES:+.5f}, Z20={Z20_RMS_WAVES:+.5f} RMS waves",
-        fontsize=16,
+    parameter_title = (
+        f"Z40={Z40_RMS_WAVES:+.5f}, Z20={Z20_RMS_WAVES:+.5f} RMS waves"
     )
-    fig.savefig(OUTPUT_DIR / "MEASURED_GAUSSIAN_ZERNIKE_COMPARISON.png", dpi=180)
-    plt.close(fig)
+    render_comparison(
+        panels,
+        experiment,
+        OUTPUT_DIR / "MEASURED_GAUSSIAN_ZERNIKE_COMPARISON.png",
+        ["black", "#1b9e77", "#d95f02", "#7570b3"],
+        (22, 9),
+        "Key Zernike case with measured 2026-07-16 Gaussian input\n"
+        + parameter_title,
+    )
+    render_comparison(
+        [panels[0], panels[2]],
+        experiment,
+        OUTPUT_DIR / "EXPERIMENT_VS_MEASURED_GAUSSIAN_ZERNIKE.png",
+        ["black", "#d95f02"],
+        (12, 9),
+        "Experiment vs measured Gaussian with spherical aberration + defocus\n"
+        + parameter_title,
+    )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
