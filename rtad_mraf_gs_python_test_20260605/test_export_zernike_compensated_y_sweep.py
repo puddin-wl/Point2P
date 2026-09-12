@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import sys
 import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from export_zernike_compensated_y_sweep import (
     output_filename,

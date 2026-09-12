@@ -1,50 +1,52 @@
-# Baselines
+# Point2P 基线说明
 
-## Initial Phase Baseline
+本文件保留基线定义。最新使用状态见 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)。
 
-Status: verified and frozen as the current Romero-Dickey initial phase baseline.
+## 初始相位历史基线：2026-04-28
 
-### Phase Output
-
-```text
-E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942
-```
-
-Key file for downstream MRAF/WGS optimization:
-
-```matlab
-load('E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat')
-```
-
-Default parameters:
-
-- `beta_x = 9.060975545`
-- `beta_y = 3.294900198`
-- `target size = 330 x 120 um`
-- `lambda = 532 nm`
-- `f = 429 mm`
-- `input 1/e^2 diameter = 5 mm`
-- `clear aperture = 15 mm`
-
-### Diagnostic Output
+历史目录：
 
 ```text
-E:\program\Point2P\result_diagnostics\artifacts\20260428-141916
+initial_phase_generation/artifacts/20260428-141942
 ```
 
-Key baseline metrics:
+参数：
 
-- `size50_x/y = 321.931 / 109.254 um`
-- `size13p5_x/y = 370.088 / 153.315 um`
-- `transition_13p5_90_x/y = 48.999 / 45.735 um`
-- `core_rms = 0.163565466`
-- `shoulder_peak_x/y = -0.002643 / -0.215922`
-- `true_side_lobe_x/y = none / none`
-- `energy_inside_signal = 0.863962`
+- βx=9.060975545，βy=3.294900198；
+- 目标 330×120 μm；
+- 波长 532 nm；
+- 焦距 429 mm；
+- 入射光 1/e² 强度直径 5 mm；
+- 通光孔径 15 mm。
 
-### Policy
+该目录是早期 5 mm Romero–Dickey 初始相位基线，不代表当前 6.5 mm 实验输入。目录被 Git 忽略，因此新环境应运行生成脚本，不应假定该本地路径存在。
 
-- Do not delete these two artifact folders.
-- Do not change `initial_phase_generation` core logic unless creating a new named baseline.
-- Future MRAF/WGS scripts should load this baseline `phase0.mat` rather than re-implementing initial phase generation.
+## 仿真参考基线：2026-06-05
+
+```text
+rtad_mraf_gs_python/artifacts/20260605-144020_rtad_mraf_gs_truncI0135
+```
+
+- 入射光直径：6.5 mm；
+- 目标：330×120 μm；
+- RMS 非均匀性：1.40310042%；
+- size50：329.5557×119.8249 μm；
+- e⁻² 效率：96.2935%。
+
+## 实验基线：2026-07-15 V2
+
+```text
+rtad_mraf_gs_python_test_20260605/artifacts/
+run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm
+```
+
+纯 WGS 相位是 `phase_refined.npy`；当前确认的现场加载图是 `SLM_LOAD_20260715/phase_20260715_targetExpX330_v2_shiftX+5_Y+5.bmp`。
+
+## 基线管理规则
+
+- 不覆盖已命名基线；新结果使用日期和用途命名；
+- 每个基线保存配置、命令、指标、核心文件和 SHA256；
+- “候选”“扫描”“现场确认”必须显式区分；
+- 大数组放外部归档或 Git LFS，仓库至少保留 manifest；
+- 更新实验基线时同步更新 `docs/PROJECT_STATUS.md` 和日志索引。
 

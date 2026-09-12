@@ -1,25 +1,13 @@
-# Requirements Notes
+# 环境依赖说明
 
-This project is intended to run in the local `slmrtad` conda environment.
+推荐使用 `slmrtad` Conda 环境。仓库根目录提供：
 
-Expected packages:
+- `requirements.txt`：CPU 和通用工具依赖；
+- `requirements-gpu.txt`：CUDA 12 CuPy 与 slmsuite 增量依赖。
 
-- `slmsuite==0.4.1` for source-reference semantics and future integration
-- `cupy-cuda12x` for GPU FFTs
-- `numpy`
-- `scipy`
-- `h5py`
-- `matplotlib`
-- `opencv-python`
-- `tqdm`
-
-The code does not require importing slmsuite for the first implementation. It
-uses a simplified local GS/MRAF/WGS loop based on the semantics read from
-slmsuite 0.4.1.
-
-Recommended checks:
+核心依赖包括 NumPy、SciPy、h5py、Matplotlib、OpenCV、Pillow 和 tqdm。GPU FFT 使用 `cupy-cuda12x`。`slmsuite==0.4.1` 主要用于语义参考和后续集成，当前局部 GS/MRAF/WGS 循环不依赖直接导入它。
 
 ```powershell
-& 'D:\software\anaconda\envs\slmrtad\python.exe' -c "import cupy as cp; print(cp.cuda.runtime.getDeviceCount()); print(cp.cuda.runtime.getDeviceProperties(0)['name'])"
-& 'D:\software\anaconda\envs\slmrtad\python.exe' -c "import slmsuite; print(slmsuite.__version__)"
+python -c "import cupy as cp; print(cp.cuda.runtime.getDeviceCount())"
+python -c "import slmsuite; print(slmsuite.__version__)"
 ```

@@ -1,95 +1,38 @@
-# Initial Phase Generation Module
+# Romero–Dickey 初始相位生成
 
-This folder contains the standalone Romero-Dickey initial phase generator used by the MATLAB DOE project. It is self-contained: the files in this folder are enough to generate the initial phase and one ideal Fourier-lens focal-plane flat-top result.
+本目录提供独立的 MATLAB 初始相位生成模块。它根据高斯入射光和矩形目标，使用 Romero–Dickey 点对点稳相方法生成 DOE 初始相位，并计算一次理想傅里叶透镜传播结果。
 
-## Status
+## 当前定位
 
-Current version is verified as the baseline initial-phase module. It generates the Romero-Dickey initial phase with the default parameters:
+- 默认物理配置是历史 5 mm、f=429 mm 基线；
+- 当前 6.5 mm 实验基线可使用 Python `make_phase0.py` 或测试目录中已跟踪的冻结输入；
+- 本目录输出位于 `artifacts/`，默认不进入 Git。
 
-- `beta_x = 9.060975545`
-- `beta_y = 3.294900198`
-- target size `330 x 120 um`
-- wavelength `532 nm`
-- focal length `429 mm`
+## 文件
 
-Do not change the core phase-generation logic unless a new baseline is intentionally created. Future MRAF/WGS optimization scripts should read the saved baseline phase instead of re-implementing `phase0`:
+- `default_initial_phase_config.m`：物理参数和采样配置；
+- `generate_initial_phase.m`：相位生成核心函数；
+- `run_initial_phase_generation.m`：单次运行入口；
+- `run_initial_phase_generation_beam6p4x6p3.m` 等：椭圆光束实验入口。
 
-```matlab
-load('E:\program\Point2P\initial_phase_generation\artifacts\20260428-141942\phase0.mat')
-```
+## 运行
 
-The corresponding baseline diagnostics are saved at:
-
-```text
-E:\program\Point2P\result_diagnostics\artifacts\20260428-141916
-```
-
-## Files
-
-- `default_initial_phase_config.m` — standalone copy of all configuration values needed for initial phase generation.
-- `generate_initial_phase.m` — standalone generator containing the useful grid, Gaussian input, RD phase, wrapping, FFT, and save logic.
-- `run_initial_phase_generation.m` — one-command demo script that saves phase and focal-plane plots.
-
-## Main Entry
+在 MATLAB 中：
 
 ```matlab
-phase_data = generate_initial_phase(cfg);
-```
-
-If no config is passed, the module uses `default_initial_phase_config.m`:
-
-```matlab
-phase_data = generate_initial_phase([]);
-```
-
-## One-Command Run
-
-```matlab
-cd E:\program\Point2P\initial_phase_generation
+cd('E:\program\Point2P\initial_phase_generation')
 run_initial_phase_generation
 ```
 
-Outputs are written to:
+输出写入 `artifacts/<时间戳>/`，主要包括：
 
-```text
-E:\program\Point2P\initial_phase_generation\artifacts\<timestamp>\
-```
+- `phase0.mat`：包裹/未包裹相位、坐标轴和配置；
+- 初始相位图；
+- 入射强度与理想焦面结果；
+- 本次配置快照。
 
-Optional forward-propagation inspection and saving:
+## 物理与坐标约定
 
-```matlab
-phase_data = generate_initial_phase(cfg, ...
-    'do_forward', true, ...
-    'output_dir', fullfile(project_root, 'artifacts', 'initial_phase_only', 'test'));
-```
+初始相位按 X/Y 可分离映射计算。下游 Python 程序读取旧 MATLAB 文件时必须核对轴方向；新生成的 Python 相位通常使用 `--no-swap-phase-xy`。
 
-## What It Generates
-
-- `phase_data.phase0_unwrapped_rad`: unwrapped analytical Romero-Dickey phase in radians.
-- `phase_data.phase0_wrapped_rad`: wrapped phase in `[0, 2*pi)`, with `NaN` outside aperture.
-- `phase_data.input_amplitude`: DOE-plane Gaussian amplitude.
-- `phase_data.aperture_mask`: clear aperture mask.
-- `phase_data.focal_x_m/focal_y_m`: focal-plane coordinates.
-- `phase_data.initial_intensity_norm`: optional ideal FFT intensity when `'do_forward'` is true.
-
-## Design Rule
-
-Downstream scripts should call `generate_initial_phase(cfg)` instead of manually calling:
-
-```matlab
-make_grid
-gaussian_input_field
-build_separable_phase_2d
-```
-
-The legacy functions remain in `DOE_ROMERO_DICKEY_MATLAB/src` for compatibility and documentation, but the clean source of phase0 is this folder.
-
-## Current Physics
-
-The generated phase is a separable Romero-Dickey analytical phase:
-
-```text
-phase0(x,y) = phase_x_RD(x) + phase_y_RD(y)
-```
-
-It uses the project configuration values for wavelength, focal length, 5 mm incident Gaussian beam, 15 mm clear aperture, and 330 x 120 um target size.
+修改光束直径、焦距或目标尺寸后，应生成新的命名基线，不要覆盖已有 artifact。

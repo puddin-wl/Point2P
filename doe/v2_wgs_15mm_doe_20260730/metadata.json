@@ -1,0 +1,139 @@
+{
+  "source_phase": "rtad_mraf_gs_python_test_20260605/artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/phase_refined.npy",
+  "source_sha256": "cf513dd1135234c1afef33c2a347b88028171f68517ba882ad98d420f75eef61",
+  "source_shape": [
+    2048,
+    2048
+  ],
+  "source_dx_um_per_pixel": 44.575781250000006,
+  "source_full_grid_size_mm": 91.29120000000002,
+  "source_span_for_15mm_pixels": 336.5055996634943,
+  "conversion": "centered physical-coordinate sampling of exp(i*phase), cubic interpolation",
+  "installation_shift_applied": false,
+  "blaze_applied": false,
+  "circular_mask_applied": false,
+  "doe_shape": "square",
+  "doe_size_mm": [
+    15.0,
+    15.0
+  ],
+  "output_shape": [
+    1024,
+    1024
+  ],
+  "output_pixel_pitch_um": 14.6484375,
+  "phase_range_rad": [
+    0.0,
+    6.283164024353027
+  ],
+  "quantization": {
+    "method": "same floor rule as kalyout_doemake.m",
+    "wavelength_nm": 532.0,
+    "substrate_index": 1.458,
+    "ambient_index": 1.00029,
+    "full_2pi_depth_nm": 1162.30801162308,
+    "etch_step_nm": 77.5,
+    "binary_mask_bits": [
+      8,
+      4,
+      2,
+      1
+    ],
+    "level_histogram": {
+      "0": 65716,
+      "1": 66396,
+      "2": 81468,
+      "3": 77144,
+      "4": 68952,
+      "5": 66584,
+      "6": 76492,
+      "7": 66964,
+      "8": 56292,
+      "9": 59416,
+      "10": 81320,
+      "11": 71020,
+      "12": 65836,
+      "13": 71116,
+      "14": 73860
+    },
+    "horizontal_run_rectangles_per_layer": {
+      "8": 10374,
+      "4": 20648,
+      "2": 40592,
+      "1": 69808
+    },
+    "gds_rectangles_per_layer": {
+      "8": 10374,
+      "4": 20648,
+      "2": 40592,
+      "1": 69808
+    },
+    "gds_layers": {
+      "1": {
+        "bit": 8,
+        "etch_depth_increment_nm": 620.0
+      },
+      "2": {
+        "bit": 4,
+        "etch_depth_increment_nm": 310.0
+      },
+      "3": {
+        "bit": 2,
+        "etch_depth_increment_nm": 155.0
+      },
+      "4": {
+        "bit": 1,
+        "etch_depth_increment_nm": 77.5
+      },
+      "100": {
+        "purpose": "15 mm square reference outline; not an etch mask"
+      }
+    }
+  },
+  "files": {
+    "doe_phase_v2_wgs_15mm_1024.npy": {
+      "sha256": "1ad80100a998f319ef4195b35c527c17d903d46dc80402be114d9a382651305d",
+      "bytes": 4194432
+    },
+    "doe_phase_v2_wgs_15mm_1024.mat": {
+      "sha256": "eb30ffaf5a364e48ea93ce6b7f9e9d114da347cd80e89da56740469ca7405fc4",
+      "bytes": 6834610
+    },
+    "doe_levels_v2_wgs_15mm_1024.npy": {
+      "sha256": "9b74afdb3a33bb7e07b5adc077d00cf17c2a986e5eef5379b20fb87a62863260",
+      "bytes": 1048704
+    },
+    "doe_phase_v2_wgs_15mm_16bit.png": {
+      "sha256": "d660bd89de731879d2e02ff24085c1ca22f3064d41ee82f69fb629c06f731bd2",
+      "bytes": 1379644
+    },
+    "doe_levels_v2_wgs_15mm.png": {
+      "sha256": "552723ba1a5536e6c30b5022293540abee9aadfa1ba2822e1a89008696aa06a7",
+      "bytes": 58459
+    },
+    "doe_v2_wgs_15mm_preview.png": {
+      "sha256": "8ee1802729995b8270b743f7310668cc86e7bc763386f8bfd61841ce6c0200d2",
+      "bytes": 1205159
+    },
+    "mask_bit_8.png": {
+      "sha256": "601b9d23225db2329128a0633a16ec4581e49ab23d60013c756f79dcff54ecd5",
+      "bytes": 15310
+    },
+    "mask_bit_4.png": {
+      "sha256": "6a9d5f571501d44ada346095e165d2b360ab581e2b639ae4fc3e8a152a5e52b7",
+      "bytes": 24766
+    },
+    "mask_bit_2.png": {
+      "sha256": "95768faaa7443f69923033ab4076a1b793b5255808ae53875b2102650aabc2d8",
+      "bytes": 40241
+    },
+    "mask_bit_1.png": {
+      "sha256": "eaa76b8db5a2e62104c5b7030f40ffb7a5329806c7e4dd13361daf2b563ddce5",
+      "bytes": 57796
+    },
+    "doe_v2_wgs_15mm_square_4mask.gds": {
+      "sha256": "9da436196e7a9483d3aa3043fdbfdc96aee7862b1437860247824eadc7332646",
+      "bytes": 9051386
+    }
+  }
+}

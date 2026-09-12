@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import math
+import sys
 import unittest
+from pathlib import Path
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from export_zernike_compensated_slm import (
     default_label,

@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+testpaths = ["rtad_mraf_gs_python_test_20260605"]
+python_files = ["test_*.py"]
+addopts = "-ra"

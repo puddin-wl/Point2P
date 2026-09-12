@@ -1,14 +1,73 @@
-# Generated experiment artifacts
-DOE_ROMERO_DICKEY_MATLAB/artifacts/
-DOE_ROMERO_DICKEY_MATLAB/exports/
-initial_phase_generation/artifacts/
-result_diagnostics/artifacts/
+# Python 缓存与本地环境
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
 
-# Project working directories
+# IDE 与本地助手配置
 .claude/
+**/.idea/
+
+# MATLAB/LaTeX 临时文件
+*.asv
+*.m~
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+
+# 压缩归档和平台相关编译产物
+*.zip
+*.mex*
+*.o
+
+# 参考文献原文仅保留在本机
 text/
 
-# Temporary exploration / fitting scripts
+# 主要运行输出
+initial_phase_generation/artifacts/
+result_diagnostics/artifacts/
+truncated_beam_phase/artifacts/
+real_world_simulation/artifacts/
+
+# 实验室运行输出由各子目录 .gitignore 进一步管理
+lab_test/lab_test_f100mm/artifacts/
+lab_test/lab_test_f100mm/matlab/artifacts/
+lab_test/lab_test_f200mm/artifacts/
+lab_test/lab_test_f200mm/matlab/artifacts/
+lab_test/lab_test_f300mm/artifacts/
+lab_test/lab_test_f300mm/matlab/artifacts/
+lab_test/lab_test_f200mm_slm_17um_1024/artifacts/
+lab_test/lab_test_f200mm_slm_17um_1024/matlab/artifacts/
+lab_test/lab_wgs/artifacts/
+
+# 明确不再跟踪的历史大文件/生成图
+lab_test/lab_test_f100mm/phase0_initial.npy
+real_world_simulation/error/
+fig_analysis/input/
+fig_analysis/output/*.tif
+fig_analysis/output/*.jpg
+fig_analysis/output/debug_*.png
+
+# 相机原始数据和大数组
+real_test/**/*.bmData
+real_test/**/*.bgData
+real_test/**/extracted_images/*.npy
+
+# 报告渲染检查图
+presentation/render_check*/
+
+# 15 mm DOE：保留源代码、说明、metadata 和最终 GDS；忽略可重建中间文件
+doe/gdsii-toolbox-master/
+doe/kalyout_doemake.m
+doe/v2_wgs_15mm_doe_20260730/*.npy
+doe/v2_wgs_15mm_doe_20260730/*.mat
+doe/v2_wgs_15mm_doe_20260730/*.png
+
+# 临时探索脚本
 real_world_simulation/diagnose_concavity.py
 real_world_simulation/explore_problem1.py
 real_world_simulation/explore_problem2.py
@@ -18,43 +77,3 @@ real_world_simulation/fit_problem3_compound.py
 real_world_simulation/make_summary_pdf.py
 real_world_simulation/rerun_problem3.py
 real_world_simulation/test_divergence_fine.py
-
-# LaTeX build artifacts
-*.aux
-*.log
-*.nav
-*.out
-*.snm
-*.toc
-*.vrb
-
-# Lab-test artifacts (large .npy / .mat files)
-lab_test_f100mm/artifacts/
-lab_test_f300mm/artifacts/
-lab_test_f200mm/artifacts/
-lab_test_f200mm/make_phase0_output*/
-fig_analysis/input/
-lab_wgs/artifacts/
-truncated_beam_phase/artifacts/
-
-# Python bytecode
-__pycache__/
-*.pyc
-
-# Large archives
-*.zip
-
-# MATLAB transient files
-*.asv
-*.m~
-
-# IDE metadata
-**/.idea/
-
-# Camera raw data and extracted numeric arrays are large local experiment inputs.
-real_test/**/*.bmData
-real_test/**/*.bgData
-real_test/**/extracted_images/*.npy
-
-# Presentation render-check images are reproducible QA outputs.
-presentation/render_check*/

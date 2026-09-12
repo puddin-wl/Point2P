@@ -1,7 +1,9 @@
-# Point2P — DOE 矩形平顶光斑设计：完整技术总结
+# Point2P — DOE 矩形平顶光斑算法与架构说明
 
 > 将 532 nm 高斯激光束通过衍射光学元件（DOE）整形成焦平面上 330×120 μm 矩形平顶光斑。
 > 核心管线：Romero-Dickey 初始相位 → RTAD 目标构建 → WGS 迭代精修。
+
+> 本文主体形成于 2026-06-08，用于说明算法和当时的扫描过程。当前实验基线、Zernike 候选和 15 mm DOE 状态以 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) 为准。
 
 ---
 
@@ -29,7 +31,7 @@
 |------|-----|------|
 | 波长 λ | 532 nm | 绿光激光 |
 | 焦距 f | 429 mm（正式）/ 100–300 mm（验证） | 傅里叶透镜 |
-| 入射光斑 1/e² 直径 | 6 mm（2026-06 更新，原 5 mm） | 高斯光束 |
+| 入射光斑 1/e² 直径 | 6.5 mm（2026-06-05 参考基线；通用配置默认 6.0 mm） | 高斯光束 |
 | 通光孔径 | 15 mm | 圆形硬边光阑 |
 | 目标光斑尺寸 (50% 全宽) | **330 × 120 μm** | 矩形平顶 |
 | 计算网格 N | 2048 × 2048 | 焦面采样 2.5 μm/pixel |
@@ -264,7 +266,7 @@ Romero-Dickey (1996)              Chen et al. (2025)
         phase0 → RTAD target → WGS refinement
 ```
 
-> **一句话**：Romero-Dickey 给出物理起点，RTAD 抑制频谱泄露，MRAF 松弛背景约束，WGS 逐像素匀化——四者叠加，从 RMS > 10% 收敛到 **1.86%**。
+> **一句话**：Romero-Dickey 给出物理起点，RTAD 抑制频谱泄露，MRAF 松弛背景约束，WGS 逐像素匀化；2026-06-05 参考基线最终 RMS 非均匀性为 **1.403%**。
 
 ---
 
@@ -304,15 +306,15 @@ release_level: 0.135 (exp(−2))
 
 ### 6.1 f=429mm 正式管线最佳结果
 
-> **最佳结果路径**：`rtad_mraf_gs_python/artifacts/20260605-144020_rtad_mraf_gs_truncI0135/`（已获实验验证）
+> **参考结果路径**：`rtad_mraf_gs_python/artifacts/20260605-144020_rtad_mraf_gs_truncI0135/`。下表已按该目录现存诊断文件校正。
 
 | 指标 | 值 | 说明 |
 |------|-----|------|
-| RMS 非均匀性 | **1.86%** | mask_flat 内 |
-| size50_x / size50_y | 330.2 / 123.6 μm | 目标 330×120 |
-| size13.5_x / size13.5_y | 350.7 / 145.6 μm | 13.5% 轮廓 |
-| transition_13.5_90 (x/y) | 20.3 / 21.7 μm | 边缘过渡宽度 |
-| e⁻² 衍射效率 | **92.5%** | 进入 13.5% 轮廓内能量比例 |
+| RMS 非均匀性 | **1.4031%** | mask_flat 内 |
+| size50_x / size50_y | 329.56 / 119.82 μm | 目标 330×120 |
+| size13.5_x / size13.5_y | 345.76 / 136.04 μm | 13.5% 轮廓 |
+| transition_13.5_90 (x/y) | 17.12 / 16.50 μm | 边缘过渡宽度 |
+| e⁻² 衍射效率 | **96.2935%** | 进入 13.5% 轮廓内能量比例 |
 
 ### 6.2 短焦距 β 值验证
 
@@ -349,22 +351,20 @@ release_level: 0.135 (exp(−2))
 
 ## 附录 B：运行命令速查
 
-```bash
+```powershell
 # 环境
 conda activate slmrtad
 
-# Stage 2: 仿真 WGS 精修（从已有 phase0）
+# 生成 6.5 mm 初始相位并运行 WGS
 cd E:\program\Point2P\rtad_mraf_gs_python
-python run_rtad_mraf_gs_case.py \
-    --phase-mat ../initial_phase_generation/artifacts/20260428-141942/phase0.mat \
-    --phase-var phase0_wrapped_rad \
-    --method wgs \
-    --wgs-strategy flat_local \
-    --iters 200 \
-    --wgs-feedback-exponent 0.8 \
-    --wgs-weight-min 0.5 \
-    --wgs-weight-max 2.0 \
-    --bg-factor 0.9
+python make_phase0.py --beam 6.5 --out artifacts/phase0_beam6p5mm
+python run_rtad_mraf_gs_case.py `
+    --phase-mat artifacts/phase0_beam6p5mm/phase0.mat `
+    --phase-var phase0_wrapped_rad --beam-diameter 6.5 `
+    --method wgs --wgs-strategy flat_local --iters 200 `
+    --wgs-feedback-exponent 0.8 `
+    --wgs-weight-min 0.5 --wgs-weight-max 1.5 `
+    --bg-factor 0.9 --no-swap-phase-xy
 
 # 诊断已有结果
 python run_diagnostics_case.py artifacts/<输出目录>
@@ -373,11 +373,9 @@ python run_diagnostics_case.py artifacts/<输出目录>
 python ../fig_analysis/analyze_captured.py <image.mat/.bmp/.png/.tif> --pixel-um 3.45
 
 # 冒烟测试（验证环境）
-python run_rtad_mraf_gs_case.py --iters 20 --smoke-shape 256
+python run_rtad_mraf_gs_case.py --iters 2 --smoke-shape 256 --no-cupy
 ```
 
 ---
 
-*文档生成时间：2026-06-08 | 基于 E:\program\Point2P 项目文件及四篇理论文献*
-*验证管线不用多说，以正式管线为基准* 
-最好的结果位于：E:\program\Point2P\rtad_mraf_gs_python\artifacts\20260605-144020_rtad_mraf_gs_truncI0135。这是正式管线最好的结果。已经得到了验证。
+*初稿时间：2026-06-08；状态和参考指标于 2026-09-12 校正。*
