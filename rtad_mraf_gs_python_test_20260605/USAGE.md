@@ -30,7 +30,7 @@ artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm
 
 - `phase_refined.npy`：无安装偏移、无闪耀光栅的纯 WGS 相位；
 - `SLM_LOAD_20260715/...X+5_Y+5.bmp`：当前现场确认加载图；
-- Zernike 输出目录：实验候选，不替代当前 V2。
+- Zernike 输出目录：历史候选；PBS 损伤根因确认后已停用，不替代当前 V2。
 
 ## 安装偏移
 
@@ -51,7 +51,10 @@ python shift_sweep_slm.py <phase_refined.npy> `
   --shifts-x 0 --blaze-x 200 --blaze-y 200
 ```
 
-## Zernike 补偿
+## Zernike 补偿工具（历史保留）
+
+后续已确认中心空洞来自 PBS 在极高功率下损坏，因此这些工具和参数不再用于
+修正该问题，只保留复现和通用导出能力。
 
 固定光轴导出使用 `export_zernike_compensated_slm.py`；整幅 V2+Zernike 相位共同移动的 Y 扫描使用 `export_zernike_compensated_y_sweep.py`。两者处理顺序不同，详见 `README_ZERNIKE_COMPENSATION.md`。
 

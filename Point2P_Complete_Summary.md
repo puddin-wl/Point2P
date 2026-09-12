@@ -3,7 +3,9 @@
 > 将 532 nm 高斯激光束通过衍射光学元件（DOE）整形成焦平面上 330×120 μm 矩形平顶光斑。
 > 核心管线：Romero-Dickey 初始相位 → RTAD 目标构建 → WGS 迭代精修。
 
-> 本文主体形成于 2026-06-08，用于说明算法和当时的扫描过程。当前实验基线、Zernike 候选和 15 mm DOE 状态以 [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) 为准。
+> 本文主体形成于 2026-06-08，用于说明算法和当时的扫描过程。当前实验基线、
+> 中心空洞的 PBS 损伤根因、已停用的历史 Zernike 方案和 15 mm DOE 状态以
+> [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) 为准。
 
 ---
 

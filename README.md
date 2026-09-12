@@ -12,7 +12,8 @@ Point2P 用于把 532 nm 高斯光束整形成矩形平顶光斑。项目包含 
 | 当前实验基线 | 2026-07-15 V2，设计目标补偿为 W50=375.02 μm、H50=137 μm，安装补偿 X+5/Y+5 |
 | 现场加载文件 | `phase_20260715_targetExpX330_v2_shiftX+5_Y+5.bmp`，包含 X/Y 闪耀光栅 |
 | 纯 WGS 相位 | 同一 V2 目录中的 `phase_refined.npy`，不含安装平移和闪耀光栅 |
-| Zernike 补偿 | 2026-07-23 的 Z40/Z20 是实验候选，尚未替代 7 月 15 日基线 |
+| 中心空洞根因 | 后续排查确认是 PBS 在极高功率下损坏；原球差/离焦拟合仅作历史排查记录 |
+| Zernike 补偿 | 2026-07-23 的 Z40/Z20 空洞补偿方案已停用，不再作为后续实验依据 |
 | 15 mm DOE | 2026-07-30 已生成四掩膜 GDS；脚本和制造说明纳入项目，数值中间文件按生成物管理 |
 
 ## 目录说明
@@ -25,7 +26,7 @@ Point2P/
 ├── initial_phase_generation/          # MATLAB Romero–Dickey 初始相位
 ├── lab_test/                          # f=100/200/300 mm 与实验反馈 WGS 验证
 ├── real_test/                         # 实验数据分析记录
-├── hollow_flattop_analysis_20260716/  # 中心空洞与球差/离焦分析
+├── hollow_flattop_analysis_20260716/  # 中心空洞历史分析（已由 PBS 损伤结论取代）
 ├── real_world_simulation/             # 入射和光路误差容差扫描
 ├── fig_analysis/                      # 实验光斑图像分析
 ├── result_diagnostics/                # MATLAB 焦面诊断
@@ -101,4 +102,4 @@ python -m unittest discover -s rtad_mraf_gs_python_test_20260605 -p "test_*.py"
 - [稳定基线校验清单](baselines/README.md)
 - [算法与架构说明](Point2P_Complete_Summary.md)
 - [V2 实验日志索引](rtad_mraf_gs_python_test_20260605/log/README.md)
-- [中心空洞最终结论](hollow_flattop_analysis_20260716/docs/FINAL_CONCLUSION_20260717.md)
+- [中心空洞根因更正](hollow_flattop_analysis_20260716/docs/ROOT_CAUSE_UPDATE_20260912.md)

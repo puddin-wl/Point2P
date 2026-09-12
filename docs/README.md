@@ -25,7 +25,8 @@
 
 - [`history/RTAD_PARAMETER_TRIALS_20260428_20260602.md`](history/RTAD_PARAMETER_TRIALS_20260428_20260602.md)：原两份重复 README 中的早期参数扫描全文。
 - [`../rtad_mraf_gs_python_test_20260605/log/README.md`](../rtad_mraf_gs_python_test_20260605/log/README.md)：2026 年 7 月实验日志索引。
-- [`../hollow_flattop_analysis_20260716/README.md`](../hollow_flattop_analysis_20260716/README.md)：中心空洞分析入口。
+- [`../hollow_flattop_analysis_20260716/docs/ROOT_CAUSE_UPDATE_20260912.md`](../hollow_flattop_analysis_20260716/docs/ROOT_CAUSE_UPDATE_20260912.md)：中心空洞的 PBS 损伤根因更正。
+- [`../hollow_flattop_analysis_20260716/README.md`](../hollow_flattop_analysis_20260716/README.md)：已归档的中心空洞仿真排查。
 - [`../real_test/`](../real_test/)：实验图像与尺寸定义记录。
 - [`../presentation/`](../presentation/)：阶段汇报材料。
 

@@ -1,9 +1,13 @@
 # V2 球差与离焦补偿相位导出
 
-`export_zernike_compensated_slm.py` 在已经确认的 V2 相位上叠加标准
-Noll-Zernike 球差和离焦补偿，并输出实验可直接加载的 1024×1024、8-bit BMP。
+> **状态更正（2026-09-12）**：后续确认中心空洞由 PBS 在极高功率下损坏
+> 造成。本文参数和输出已停止用于该问题，仅保留通用导出、历史复现和回归测试
+> 能力。不要把下列 Z40/Z20 当作当前实验所需补偿。
 
-## 当前默认补偿
+`export_zernike_compensated_slm.py` 在已经确认的 V2 相位上叠加标准
+Noll-Zernike 球差和离焦项，并输出 1024×1024、8-bit BMP。
+
+## 历史补偿参数（已停用）
 
 ```text
 Z40 = +0.10625 RMS waves
@@ -11,8 +15,8 @@ Z20 = +0.25000 RMS waves
 pupil diameter = 15 mm
 ```
 
-这组正号参数是仿真得到的负球差/负离焦主案例的反号，作为第一张实验补偿相位。
-它不是最终标定值，后续应根据真实光斑指标联动微调 Z40 和 Z20。
+这组正号参数是当时仿真得到的负球差/负离焦案例的反号，曾作为第一张实验补偿
+相位。PBS 损伤根因确认后，不再围绕这次中心空洞微调 Z40 和 Z20。
 
 ## 处理顺序
 
@@ -33,7 +37,7 @@ Zernike 补偿在安装平移之后加入，因此安装补偿只移动矩形整
 `0.20 rho`（物理宽度 1.5 mm）的 C2 连续径向延拓，再保持为常量活塞相位。
 因此不会在 SLM 上生成“15 mm 圆外突然清零”的人工圆形相位跳变。
 
-## 当前基准命令
+## 历史复现命令
 
 ```powershell
 D:\software\anaconda\envs\slmrtad\python.exe export_zernike_compensated_slm.py `
@@ -51,7 +55,7 @@ D:\software\anaconda\envs\slmrtad\python.exe export_zernike_compensated_slm.py `
 
 ## 输出
 
-- `phase_V2_posSphericalComp_*.bmp`：实验直接加载文件；
+- `phase_V2_posSphericalComp_*.bmp`：当时生成的实验加载文件（现已停用）；
 - 同名 `.npy`、`.mat`：SLM 相位数值记录；
 - `zernike_compensation_waves_2048.npy`：补偿波前；
 - `phase_compensated_pre_blaze_2048.npy`：加闪耀光栅前的完整相位；
@@ -68,7 +72,7 @@ D:\software\anaconda\envs\slmrtad\python.exe export_zernike_compensated_slm.py `
 `export_zernike_compensated_y_sweep.py`。该脚本先合成`V2 + Z40/Z20`，再把
 完整合成相位一起平移，最后加入闪耀光栅。因此球差补偿中心会随Y平移一起移动。
 
-当前首轮固定`X=+5`，输出：
+当时首轮固定`X=+5`，输出：
 
 ```text
 Y = -10, -5, 0, +5, +10, +15, +20 computational pixels
