@@ -5,6 +5,12 @@ artifacts/*
 !artifacts/phase0_beam6p5mm/phase0.mat
 !artifacts/phase0_beam6p5mm/config_snapshot.mat
 
+# Permanently preserve the canonical 2026-07-15 V2 source used by the GDS.
+!artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/
+artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/*
+!artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/phase_refined.npy
+!artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/config_used.json
+
 # Python bytecode/cache.
 __pycache__/
 src/__pycache__/

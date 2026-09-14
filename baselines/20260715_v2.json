@@ -16,13 +16,15 @@
       "path": "rtad_mraf_gs_python_test_20260605/artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/phase_refined.npy",
       "bytes": 16777344,
       "sha256": "cf513dd1135234c1afef33c2a347b88028171f68517ba882ad98d420f75eef61",
-      "tracked_in_git": false
+      "tracked_in_git": true,
+      "storage": "git_lfs"
     },
     "config": {
       "path": "rtad_mraf_gs_python_test_20260605/artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/config_used.json",
       "bytes": 2074,
       "sha256": "0be864d4baa78a727751eee88452c57b04b062a7f4550ee2a2730e149cdd6fde",
-      "tracked_in_git": false
+      "tracked_in_git": true,
+      "storage": "git"
     },
     "slm_load_bmp": {
       "path": "rtad_mraf_gs_python_test_20260605/artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm/SLM_LOAD_20260715/phase_20260715_targetExpX330_v2_shiftX+5_Y+5.bmp",

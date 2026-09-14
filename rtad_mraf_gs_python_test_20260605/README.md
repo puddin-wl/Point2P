@@ -36,6 +36,7 @@ artifacts/run_w50_375p020_h50_137_target_expX330_v2_beam6p5mm
 ```
 
 - 纯 WGS 相位：`phase_refined.npy`；
+- 永久保存：`phase_refined.npy` 使用 Git LFS，`config_used.json` 使用普通 Git；
 - 设计目标：W50=375.02 μm、H50=137 μm；
 - 安装补偿：X+5、Y+5；
 - 闪耀光栅：焦面 X+200 μm、Y+200 μm；
